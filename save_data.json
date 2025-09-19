@@ -1,0 +1,26 @@
+{
+    "player_position": {
+        "x": 443,
+        "y": 500
+    },
+    "player_party": [
+        {
+            "id": "bulbasaur",
+            "level": 5,
+            "current_hp": 19,
+            "status_condition": null
+        },
+        {
+            "id": "squirtle",
+            "level": 4,
+            "current_hp": 17,
+            "status_condition": null
+        },
+        {
+            "id": "pidgey",
+            "level": 3,
+            "current_hp": 15,
+            "status_condition": null
+        }
+    ]
+}
