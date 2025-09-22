@@ -30,7 +30,7 @@ class Battle:
         self.turn = 1
         self.message_log = [] # ← メッセージを溜めるリスト
         self.pending_learn_move = None
-        
+        self.escape_attempts = 0
     
     def _log_message(self, message):
         """メッセージをログに追加する。"""
@@ -322,6 +322,37 @@ class Battle:
         
         self.turn += 1
         return self.message_log
+    
+    def execute_run_turn(self):
+        """「にげる」を実行するターン。成功すればTrue、失敗すればFalseを返す。"""
+        self.message_log.clear()
+        self.escape_attempts += 1
+
+        player_speed = self.player_monster.speed
+        enemy_speed = self.enemy_monster.speed
+
+        # すばやさが高ければ必ず成功
+        if player_speed >= enemy_speed:
+            self.message_log.append("うまく にげきれた！")
+            return True
+
+        # 相手の方が速い場合の計算
+        f = ((player_speed * 128) / enemy_speed) + (self.escape_attempts * 30)
+        
+        if random.randint(0, 255) < f:
+            self.message_log.append("うまく にげきれた！")
+            return True
+        else:
+            self.message_log.append("しかし にげきれなかった！")
+            # 失敗した場合、相手のターンが実行される
+            enemy_move = random.choice(self.enemy_monster.moves)
+            # attack関数のロジックを再利用（execute_turnからコピー＆簡略化）
+            self.message_log.append(f"あいての {self.enemy_monster.name} の {enemy_move['name']}！")
+            damage = self._calculate_damage(self.enemy_monster, self.player_monster, enemy_move)
+            self.player_monster.take_damage(damage)
+            self.message_log.append(f"{self.player_monster.name} は {damage} のダメージを受けた！")
+            self._apply_status_effect(self.player_monster, enemy_move)
+            return False
 
     def is_battle_over(self):
         """戦闘が終了したかどうかを判定する。（現在この関数は未使用）"""

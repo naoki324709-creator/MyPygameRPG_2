@@ -166,6 +166,8 @@ class GameManager:
         elif result == "battle_defeat":
             print("バトル敗北...")
             self.start_field()  # とりあえずフィールドに戻る
+        elif result == "escaped":
+            self.start_field()
         elif result == "to_field":
             self.start_field()
         elif result == "to_battle":

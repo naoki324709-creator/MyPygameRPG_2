@@ -46,7 +46,7 @@ class BattleScene(BaseScene):
         for i, action in enumerate(actions):
             x = 570 + (i % 2) * 110; y = 440 + (i // 2) * 40
             button = Button(x, y, 100, 35, action, self.font)
-            if action in ["バッグ", "にげる"]: button.is_enabled = False
+            if action in ["バッグ"]: button.is_enabled = False
             self.action_buttons.append(button)
         self._update_action_selection()
 
@@ -142,9 +142,12 @@ class BattleScene(BaseScene):
         return None
 
     def _handle_action_selection(self, event):
+        """メインの行動選択時のイベント処理"""
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_DOWN: self.selected_action_index = (self.selected_action_index + 2) % 4
-            elif event.key == pygame.K_UP: self.selected_action_index = (self.selected_action_index - 2) % 4
+            if event.key == pygame.K_DOWN:
+                self.selected_action_index = (self.selected_action_index + 2) % 4
+            elif event.key == pygame.K_UP:
+                self.selected_action_index = (self.selected_action_index - 2) % 4
             elif event.key == pygame.K_LEFT:
                 if self.selected_action_index % 2 == 1: self.selected_action_index -= 1
             elif event.key == pygame.K_RIGHT:
@@ -154,11 +157,23 @@ class BattleScene(BaseScene):
             if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_z]:
                 button = self.action_buttons[self.selected_action_index]
                 if not button.is_enabled: return None
-                if self.selected_action_index == 0:
+
+                if self.selected_action_index == 0: # たたかう
                     self.battle_state = "choosing_move"
-                elif self.selected_action_index == 2:
+                elif self.selected_action_index == 2: # ポケモン
                     self.battle_state = "switching"
                     self._setup_party_buttons()
+                elif self.selected_action_index == 3: # にげる
+                    # ★★★ ここから「にげる」処理を追加 ★★★
+                    success = self.battle.execute_run_turn()
+                    for msg in self.battle.message_log:
+                        self.message_box.add_message(msg)
+                    
+                    if success:
+                        self.battle_result = "escaped" # 新しい結果タイプ
+                    
+                    self.battle_state = "message_display"
+                    # ★★★ ここまで追加 ★★★
         return None
     
     def _handle_move_selection(self, event):
