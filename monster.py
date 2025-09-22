@@ -7,13 +7,14 @@ from exp_data import get_exp_for_level
 
 class Monster:
     # __init__をレベル対応に変更
-    def __init__(self, name, types, level, base_stats, moves,growth_rate):
+    def __init__(self, name, types, level, base_stats, moves, growth_rate, learnset):
         self.name = name
         self.types = types
         self.level = level
         self.base_stats = base_stats
         self.moves = moves
         self.growth_rate = growth_rate
+        self.learnset = learnset
         self.status_condition = None  # 状態異常を記録（Noneは健康な状態）
         self.toxic_counter = 0  # もうどくの経過ターンを数える
         self.sleep_counter = 0  # ねむりの残りターンを数える
@@ -103,6 +104,24 @@ class Monster:
             f"とくぼうが {self.sp_defense - old_sp_defense} あがった！",
             f"すばやさが {self.speed - old_speed} あがった！"
         ]
+
+# --- ここから技を覚える処理を追加 ---
+        new_move_id = self.learnset.get(self.level)
+        if new_move_id:
+            move_data = MOVE_DATABASE.get(new_move_id)
+            if move_data:
+                # 覚えている技が4つ未満かチェック
+                if len(self.moves) < 4:
+                    # まだ覚えていない技なら追加
+                    if move_data not in self.moves:
+                        self.moves.append(move_data)
+                        messages.append(f"{self.name}は {move_data['name']}を おぼえた！")
+                else:
+                    # 技が4つの場合は、ひとまずメッセージだけ表示
+                    messages.append(f"おや…？ {self.name}の ようすが…")
+                    messages.append(f"{self.name}は {move_data['name']}を おぼえようとしている！")
+                    messages.append("しかし、わざがいっぱいで おぼえられなかった！")
+
         return messages
 
 # モンスターを生成するための「工場」関数
@@ -133,7 +152,8 @@ def create_monster(monster_id, level):
             level=level,
             base_stats=base_stats,
             moves=monster_moves,
-            growth_rate=data["growth_rate"] 
+            growth_rate=data["growth_rate"],
+            learnset=data.get("learnset", {}) 
         )
     else:
         print(f"エラー: ID '{monster_id}' のモンスターは存在しません。")
