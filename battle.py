@@ -226,12 +226,13 @@ class Battle:
                     attacker.status_condition = None
                 else:
                     self._log_message(f"{attacker.name} は こおってて うごけない！")
-                    return # 攻撃失敗
-            #if attacker.status_condition == "sleep":
+                    return defender.is_fainted() # 攻撃失敗
+            
+            if attacker.status_condition == "sleep":
                 if attacker.sleep_counter > 0:
                     self._log_message(f"{attacker.name} は ぐうぐう ねむっている！")
                     attacker.sleep_counter -= 1 # 睡眠ターンを1減らす
-                    return # 攻撃失敗
+                    return defender.is_fainted() # 攻撃失敗
                 else:
                     self._log_message(f"{attacker.name} は めを さました！")
                     attacker.status_condition = None # ねむり状態を解除
@@ -239,28 +240,37 @@ class Battle:
             if attacker.status_condition == "paralysis":
                 if random.random() < 0.25:
                     self._log_message(f"{attacker.name} は からだがしびれて うごけない！")
-                    return # 攻撃失敗
+                    return defender.is_fainted() # 攻撃失敗
             
             self._log_message(f"{attacker.name} の {move['name']}！")
 
             # 命中判定を全ての技に適用
             if 'accuracy' in move and random.random() > move['accuracy']:
                 self._log_message("しかし こうげきは はずれた！")
-                return # 攻撃失敗
+                return defender.is_fainted() # 攻撃失敗
 
             # 技のカテゴリに応じて処理を分岐
             if move['category'] in ['physical', 'special']:
                 damage = self._calculate_damage(attacker, defender, move)
-                msg = defender.take_damage(damage) # メッセージを受け取る
-                self._log_message(msg) # ログに追加
+                
+                # ダメージ処理
                 defender.take_damage(damage)
-                if defender.status_condition == "freeze" and move['type'] == 'fire':
-                    self._log_message(f"{defender.name} の こおりが とけた！")
-                    defender.status_condition = None
-                self._apply_status_effect(defender, move)
+                # UIに表示するためのメッセージをログに追加
+                self._log_message(f"{defender.name} は {damage} のダメージを受けた！")
+                
+                # 相手が倒れていなければ、追加効果の処理を行う
+                if not defender.is_fainted():
+                    if defender.status_condition == "freeze" and move['type'] == 'fire':
+                        self._log_message(f"{defender.name} の こおりが とけた！")
+                        defender.status_condition = None
+                    self._apply_status_effect(defender, move)
+            
             elif move['category'] == 'status':
                 target = attacker if move["effect"].get("target") == "self" else defender
                 self._handle_status_move(attacker, target, move)
+
+            # ★★★修正点★★★
+            # 関数の最後に、相手がひんしになったかどうかを必ず返す
             return defender.is_fainted()
 
         # 2. 行動順に沿って攻撃処理を実行
