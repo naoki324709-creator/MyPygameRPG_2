@@ -30,6 +30,7 @@ class Battle:
         self.turn = 1
         self.message_log = [] # ← メッセージを溜めるリスト
         self.pending_learn_move = None
+        
     
     def _log_message(self, message):
         """メッセージをログに追加する。"""
