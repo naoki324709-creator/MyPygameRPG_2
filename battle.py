@@ -29,6 +29,7 @@ class Battle:
         self.enemy_monster = enemy_monster
         self.turn = 1
         self.message_log = [] # ← メッセージを溜めるリスト
+        self.pending_learn_move = None
     
     def _log_message(self, message):
         """メッセージをログに追加する。"""
@@ -126,8 +127,18 @@ class Battle:
                 if effect_type == "paralysis" and "electric" in target.types:
                     if move['power'] == 0: self._log_message(f"{target.name} には こうかがないようだ…")
                     return
-                # (他の無効化チェックも同様)
-                # ...
+                if effect_type in ["poison", "toxic"] and "poison" in target.types:
+                    if move['power'] == 0: self._log_message(f"{target.name} には こうかがないようだ…")
+                    return
+                if effect_type in ["poison", "toxic"] and "steel" in target.types:
+                    if move['power'] == 0: self._log_message(f"{target.name} には こうかがないようだ…")
+                    return
+                if effect_type == "burn" and "fire" in target.types:
+                    if move['power'] == 0: self._log_message(f"{target.name} には こうかがないようだ…")
+                    return
+                if effect_type == "freeze" and "ice" in target.types:
+                    if move['power'] == 0: self._log_message(f"{target.name} には こうかがないようだ…")
+                    return
                 
                 # 状態異常を適用
                 target.status_condition = effect_type
@@ -189,16 +200,16 @@ class Battle:
         # 交代して出てきたポケモンの能力ランクはリセットされる
         for stat in self.player_monster.stat_stages:
             self.player_monster.stat_stages[stat] = 0
-            return f"\nゆけっ！ {self.player_monster.name}！"
+        return f"\nゆけっ！ {self.player_monster.name}！"
     
     def _award_exp(self):
         """戦闘に参加したプレイヤーのポケモンに経験値を与える。"""
         # 経験値の計算式（簡略版）
-        exp_yield = self.enemy_monster.level * 15
+        exp_yield = self.enemy_monster.level * 1500
         
         # 経験値を獲得し、メッセージを受け取る
-        messages = self.player_monster.gain_exp(exp_yield)
-        return messages
+        messages, new_move = self.player_monster.gain_exp(exp_yield)
+        return messages, new_move
 
     def execute_turn(self, player_move):
         """
@@ -256,7 +267,9 @@ class Battle:
                 # ダメージ処理
                 defender.take_damage(damage)
                 # UIに表示するためのメッセージをログに追加
-                self._log_message(f"{defender.name} は {damage} のダメージを受けた！")
+                # 誰がダメージを受けたか分かりやすくする
+                defender_name = f"あいての {defender.name}" if defender == self.enemy_monster else defender.name
+                self._log_message(f"{defender_name} は {damage} のダメージを受けた！")
                 
                 # 相手が倒れていなければ、追加効果の処理を行う
                 if not defender.is_fainted():
@@ -269,7 +282,6 @@ class Battle:
                 target = attacker if move["effect"].get("target") == "self" else defender
                 self._handle_status_move(attacker, target, move)
 
-            # ★★★修正点★★★
             # 関数の最後に、相手がひんしになったかどうかを必ず返す
             return defender.is_fainted()
 
@@ -281,23 +293,11 @@ class Battle:
         else: print("(あいてが先手！)")
         
         # 1体目の攻撃
-        if attack(attacker_1, defender_1, move_1):
-            if defender_1 == self.enemy_monster: # 敵が倒れた場合
-                exp_messages = self._award_exp()
-                # ここでexp_messagesをmain.pyに渡す必要があるが、
-                # まずはprintで表示して動作確認
-                for msg in exp_messages:
-                    self._log_message(msg)
+        is_defender_1_fainted = attack(attacker_1, defender_1, move_1)
         
-
         # もし1体目の攻撃で相手が倒れたら、2体目の攻撃は行わない
-        elif not defender_1.is_fainted():
-            if attack(attacker_2, defender_2, move_2):
-                # ▼▼▼ 変更点 ▼▼▼
-                if defender_2 == self.enemy_monster: # 敵が倒れた場合
-                    exp_messages = self._award_exp()
-                    for msg in exp_messages:
-                        self._log_message(msg)
+        if not is_defender_1_fainted:
+            is_defender_2_fainted = attack(attacker_2, defender_2, move_2)
 
         # 3. ターン終了時の状態異常ダメージなどを処理
         # どちらかのポケモンが倒れていない場合のみ実行

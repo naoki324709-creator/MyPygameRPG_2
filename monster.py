@@ -53,7 +53,7 @@ class Monster:
         self.current_hp -= damage
         if self.current_hp < 0:
             self.current_hp = 0
-        print(f"{self.name} は {damage} のダメージを受けた！ 残りHP: {self.current_hp}")
+        #print(f"{self.name} は {damage} のダメージを受けた！ 残りHP: {self.current_hp}")
 
     def is_fainted(self):
         return self.current_hp <= 0
@@ -61,17 +61,40 @@ class Monster:
     def gain_exp(self, amount):
         """経験値を獲得し、レベルアップ判定を行う。発生したメッセージをリストで返す。"""
         messages = []
-        if self.is_fainted(): return messages
+        new_move = None
+        if self.is_fainted(): return messages, new_move
 
         self.exp += amount
         messages.append(f"{self.name} は {amount} の けいけんちを かくとく！")
         
         # 経験値が次のレベルに達しているかチェック（複数レベルアップも考慮）
         while self.exp >= self.exp_to_next_level:
-            level_up_messages = self.level_up()
+            level_up_messages, learned_move = self.level_up()
             messages.extend(level_up_messages)
             
-        return messages
+            # 技を覚える処理が発生したら、レベルアップを一時停止
+            if learned_move:
+                new_move = learned_move
+                break  # ここでループを中断し、技習得処理へ
+            
+        return messages, new_move
+    
+    def continue_level_up(self):
+        """技習得処理完了後に残りの経験値でレベルアップを継続する"""
+        messages = []
+        new_move = None
+        
+        # まだレベルアップできる経験値があるかチェック
+        while self.exp >= self.exp_to_next_level:
+            level_up_messages, learned_move = self.level_up()
+            messages.extend(level_up_messages)
+            
+            # また技を覚える場合は再度停止
+            if learned_move:
+                new_move = learned_move
+                break
+                
+        return messages, new_move
 
     def level_up(self):
         """レベルアップ処理を行い、メッセージをリストで返す。"""
@@ -106,23 +129,24 @@ class Monster:
         ]
 
 # --- ここから技を覚える処理を追加 ---
+        new_move_to_learn = None # 返すための変数を準備
         new_move_id = self.learnset.get(self.level)
+
         if new_move_id:
             move_data = MOVE_DATABASE.get(new_move_id)
-            if move_data:
+            if move_data and move_data not in self.moves:
                 # 覚えている技が4つ未満かチェック
                 if len(self.moves) < 4:
                     # まだ覚えていない技なら追加
-                    if move_data not in self.moves:
-                        self.moves.append(move_data)
-                        messages.append(f"{self.name}は {move_data['name']}を おぼえた！")
+                    self.moves.append(move_data)
+                    messages.append(f"{self.name}は {move_data['name']}を おぼえた！")
                 else:
-                    # 技が4つの場合は、ひとまずメッセージだけ表示
-                    messages.append(f"おや…？ {self.name}の ようすが…")
-                    messages.append(f"{self.name}は {move_data['name']}を おぼえようとしている！")
-                    messages.append("しかし、わざがいっぱいで おぼえられなかった！")
+                    new_move_to_learn = move_data
+                    # messages.append(f"おや…？ {self.name}の ようすが…")
+                    # messages.append(f"{self.name}は {move_data['name']}を おぼえようとしている！")
+                    # messages.append("しかし、わざがいっぱいで おぼえられなかった！")
 
-        return messages
+        return messages, new_move_to_learn
 
 # モンスターを生成するための「工場」関数
 # create_monster関数をレベル指定で生成できるように変更
