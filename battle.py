@@ -204,8 +204,19 @@ class Battle:
     
     def _award_exp(self):
         """戦闘に参加したプレイヤーのポケモンに経験値を与える。"""
-        # 経験値の計算式（簡略版）
-        exp_yield = self.enemy_monster.level * 1500
+        # 計算に必要な情報を取得
+        base_exp = self.enemy_monster.base_stats.get('base_exp_yield', 60) # 基礎経験値
+        enemy_level = self.enemy_monster.level # 相手のレベル
+        player_level = self.player_monster.level # 自分のレベル
+        
+        # 基本的な獲得経験値を計算
+        base_exp_gain = int((base_exp * enemy_level) / 7)
+
+        # 自分よりレベルが高い敵ほど多く、低い敵ほど少なくなる補正
+        level_modifier = (2 * enemy_level) / (player_level + enemy_level)
+        
+        # 最終的な経験値を計算し、最低でも1は保証する
+        exp_yield = max(1, int(base_exp_gain * level_modifier))
         
         # 経験値を獲得し、メッセージを受け取る
         messages, new_move = self.player_monster.gain_exp(exp_yield)

@@ -168,6 +168,7 @@ def create_monster(monster_id, level):
             "base_sp_attack": data["base_sp_attack"],
             "base_sp_defense": data["base_sp_defense"],
             "base_speed": data["base_speed"],
+            "base_exp_yield": data["base_exp_yield"]
         }
         
         return Monster(

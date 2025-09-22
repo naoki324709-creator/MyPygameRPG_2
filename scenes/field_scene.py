@@ -120,7 +120,7 @@ class FieldScene(BaseScene):
             # ランダムな野生ポケモンと遭遇
             wild_pokemon = ["charmander", "squirtle", "bulbasaur", "pidgey"]
             enemy_id = random.choice(wild_pokemon)
-            enemy_level = random.randint(3, 7)
+            enemy_level = random.randint(6,7)
             
             return f"wild_battle|{enemy_id}|{enemy_level}"
         

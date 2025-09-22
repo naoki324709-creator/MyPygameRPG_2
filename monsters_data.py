@@ -6,6 +6,7 @@ MONSTER_DATABASE = {
         "name": "フシギダネ",
         "types": ["grass", "poison"],
         "growth_rate": "medium_slow",
+        "base_exp_yield": 64,
         "learnset": { # ← 追加ブロック
             7: "turunomuti",
             10: "poison_sting"
@@ -22,6 +23,7 @@ MONSTER_DATABASE = {
         "name": "ヒトカゲ",
         "types": ["fire"],
         "growth_rate": "medium_slow",
+        "base_exp_yield": 65,
         "learnset": { # ← 追加ブロック
             8: "hinoko"
         },
@@ -37,6 +39,7 @@ MONSTER_DATABASE = {
         "name": "ゼニガメ",
         "types": ["water"],
         "growth_rate": "medium_slow",
+        "base_exp_yield": 66,
         "learnset": { # ← 追加ブロック
             8: "hinoko"
         },
@@ -52,6 +55,7 @@ MONSTER_DATABASE = {
         "name": "ポッポ",
         "types": ["normal", "flying"],
         "growth_rate": "medium_fast",
+        "base_exp_yield": 50,
         "learnset": { # ← 追加ブロック
             8: "hinoko"
         },
