@@ -5,17 +5,19 @@ MONSTER_DATABASE = {
     "bulbasaur": {
         "name": "フシギダネ",
         "types": ["grass", "poison"],
+        "growth_rate": "medium_slow",
         "base_hp": 45,
-        "base_attack": 49,
+        "base_attack": 490,
         "base_defense": 49,
-        "base_sp_attack": 65,
+        "base_sp_attack": 650,
         "base_sp_defense": 65,
-        "base_speed": 4,
+        "base_speed": 400,
         "moves": ["taiatari", "ice_beam", "hinoko", "swords_dance"]
     },
     "charmander": {
         "name": "ヒトカゲ",
         "types": ["fire"],
+        "growth_rate": "medium_slow",
         "base_hp": 39,
         "base_attack": 52,
         "base_defense": 43,
@@ -27,6 +29,7 @@ MONSTER_DATABASE = {
     "squirtle": {
         "name": "ゼニガメ",
         "types": ["water"],
+        "growth_rate": "medium_slow",
         "base_hp": 44,
         "base_attack": 48,
         "base_defense": 65,
@@ -38,6 +41,7 @@ MONSTER_DATABASE = {
     "pidgey": {
         "name": "ポッポ",
         "types": ["normal", "flying"],
+        "growth_rate": "medium_fast",
         "base_hp": 40,
         "base_attack": 45,
         "base_defense": 40,
