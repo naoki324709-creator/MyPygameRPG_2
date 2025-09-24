@@ -19,7 +19,15 @@ class Monster:
         self.stat_stages = {
             "attack": 0, "defense": 0, "sp_attack": 0, "sp_defense": 0, "speed": 0
         }
-        self.exp = get_exp_for_level(level, self.growth_rate)
+        # 経験値の初期化を修正
+        # 現在のレベルの最低必要経験値から開始
+        if level <= 1:
+            self.exp = 0
+        else:
+            # 前のレベルの経験値から開始（レベルアップ直後の状態）
+            self.exp = get_exp_for_level(level, self.growth_rate)
+        
+        # 次のレベルに必要な経験値を設定
         self.exp_to_next_level = get_exp_for_level(level + 1, self.growth_rate)
 
         self._calculate_stats()
@@ -42,29 +50,66 @@ class Monster:
         return self.current_hp <= 0
 
     def gain_exp(self, amount):
-        """経験値を獲得し、メッセージと覚えるべき技の「リスト」を返す"""
+        """経験値を獲得し、レベルアップ判定を行う。本家仕様：技習得時にレベルアップ一時停止"""
         messages = []
-        new_moves_to_learn = [] # 覚える技をリストで管理
-        if self.is_fainted():
-            return messages, new_moves_to_learn
+        new_move = None
+        if self.is_fainted(): 
+            return messages, new_move
 
-        messages.append(f"{self.name} は {amount} の けいけんちを かくとく！")
         self.exp += amount
+        messages.append(f"{self.name} は {amount} の けいけんちを かくとく！")
         
-        # 経験値が足りている限りレベルアップを繰り返す
+        # デバッグ用の情報出力
+        print(f"[DEBUG] {self.name} - 成長タイプ: {self.growth_rate}")
+        print(f"[DEBUG] 経験値獲得後: {self.exp} / 次レベル必要: {self.exp_to_next_level}")
+        
+        # 経験値が次のレベルに達しているかチェック
         while self.exp >= self.exp_to_next_level:
             level_up_messages, learned_move = self.level_up()
             messages.extend(level_up_messages)
             
+            # 技を覚える処理が発生したら、レベルアップを一時停止
             if learned_move:
-                new_moves_to_learn.append(learned_move) # 覚えた技をリストに追加
+                new_move = learned_move  # 技オブジェクト（辞書）を返す
+                break  # ここでループを中断し、技習得処理へ
             
-        return messages, new_moves_to_learn
+        return messages, new_move
+    
+    def continue_level_up(self):
+        """技習得処理完了後に残りの経験値でレベルアップを継続する"""
+        messages = []
+        new_move = None
+        
+        # まだレベルアップできる経験値があるかチェック
+        while self.exp >= self.exp_to_next_level:
+            level_up_messages, learned_move = self.level_up()
+            messages.extend(level_up_messages)
+            
+            # また技を覚える場合は再度停止
+            if learned_move:
+                new_move = learned_move  # 技オブジェクト（辞書）を返す
+                break
+                
+        return messages, new_move
 
     def level_up(self):
         """レベルアップ処理を行い、メッセージと覚えるべき技（単体）を返す"""
+        old_level = self.level
         self.level += 1
+        
+        # デバッグ用の情報出力
+        print(f"[DEBUG] {self.name} レベル {old_level} -> {self.level}")
+        # ここに新しいデバッグコードを追加 ↓
+        # print(f"[DEBUG] 直接計算テスト:")
+        # from exp_data import get_exp_for_level
+        # print(f"fast レベル{self.level + 1}: {get_exp_for_level(self.level + 1, 'fast')}")
+        # print(f"medium_slow レベル{self.level + 1}: {get_exp_for_level(self.level + 1, 'medium_slow')}")
+        # print(f"slow レベル{self.level + 1}: {get_exp_for_level(self.level + 1, 'slow')}")
+        # print(f"実際の計算 get_exp_for_level({self.level + 1}, '{self.growth_rate}'): {get_exp_for_level(self.level + 1, self.growth_rate)}")
+        # ここまで追加 ↑
         self.exp_to_next_level = get_exp_for_level(self.level + 1, self.growth_rate)
+        
+        print(f"[DEBUG] 次のレベル必要経験値: {self.exp_to_next_level} (成長タイプ: {self.growth_rate})")
         
         old_max_hp = self.max_hp
         old_attack = self.attack
@@ -88,15 +133,18 @@ class Monster:
             f"すばやさが {self.speed - old_speed} あがった！"
         ]
 
+        # 技習得チェック
         new_move_to_learn = None
         new_move_id = self.learnset.get(self.level)
         if new_move_id:
             move_data = MOVE_DATABASE.get(new_move_id)
             if move_data and move_data not in self.moves:
                 if len(self.moves) < 4:
+                    # 技スロットに空きがあればそのまま覚える
                     self.moves.append(move_data)
                     messages.append(f"{self.name}は {move_data['name']}を おぼえた！")
                 else:
+                    # 技スロットが満杯なら技習得選択画面へ
                     new_move_to_learn = move_data
         
         return messages, new_move_to_learn
@@ -118,7 +166,6 @@ def create_monster(monster_id, level):
             "base_sp_attack": data["base_sp_attack"],
             "base_sp_defense": data["base_sp_defense"],
             "base_speed": data["base_speed"],
-            "base_exp_yield": data.get("base_exp_yield", 60) # .getで安全に取得
         }
         
         return Monster(

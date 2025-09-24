@@ -205,6 +205,14 @@ class Battle:
     
     def _award_exp(self):
         """戦闘に参加したプレイヤーのポケモンに経験値を与える。"""
+        # テスト用に大量経験値を与える
+        # exp_yield = 1000  # 一時的に固定値に変更
+    
+        # print(f"[DEBUG] テスト用大量経験値: {exp_yield}")
+    
+        # # 経験値を獲得し、メッセージを受け取る
+        # messages, new_move = self.player_monster.gain_exp(exp_yield)
+        # return messages, new_move
         # 計算に必要な情報を取得
         base_exp = self.enemy_monster.base_stats.get('base_exp_yield', 60) # 基礎経験値
         enemy_level = self.enemy_monster.level # 相手のレベル

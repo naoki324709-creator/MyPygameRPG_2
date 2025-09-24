@@ -3,88 +3,98 @@
 # 技のデータを辞書形式で定義
 MOVE_DATABASE = {
     "taiatari": {
+        "id": "taiatari",
         "name": "たいあたり",
         "power": 30,
         "accuracy": 1.0, 
-        "category": "physical",  # ← カテゴリを追加
-        "type": "normal",  # ← タイプを追加
-        "effect": None # 追加効果なし
+        "category": "physical",
+        "type": "normal",
+        "effect": None
     },
     "turunomuti": {
+        "id": "turunomuti",
         "name": "つるのムチ",
         "power": 45,
         "accuracy": 1.0, 
-        "category": "physical",  # ← カテゴリを追加
-        "type": "grass",   # ← タイプを追加
-        "effect": None # 追加効果なし
+        "category": "physical",
+        "type": "grass",
+        "effect": None
     },
     "hinoko": {
+        "id": "hinoko",
         "name": "ひのこ",
-        "power": 1,#40
+        "power": 1,
         "accuracy": 1.0, 
-        "category": "special",   # ← カテゴリを追加
-        "type": "fire",    # ← タイプを追加
-        "effect": {"type": "burn", "chance": 1} # ← 10%の確率で「やけど」
+        "category": "special",
+        "type": "fire",
+        "effect": {"type": "burn", "chance": 1}
     },
     "awa": {
+        "id": "awa",
         "name": "あわ",
         "power": 40,
         "accuracy": 1.0, 
-        "category": "special",   # ← カテゴリを追加
-        "type": "water",   # ← タイプを追加
-        "effect": None # 追加効果なし
+        "category": "special",
+        "type": "water",
+        "effect": None
     },
-    "poison_sting": { # 新しい技を追加
+    "poison_sting": {
+        "id": "poison_sting",
         "name": "どくばり",
         "power": 15,
         "accuracy": 1.0, 
         "category": "physical",
         "type": "poison",
-        "effect": {"type": "poison", "chance": 0.3} # 30%の確率で「どく」
+        "effect": {"type": "poison", "chance": 0.3}
     },
-    "thunder_wave": { # 新しい技を追加
+    "thunder_wave": {
+        "id": "thunder_wave",
         "name": "でんじは",
-        "power": 0, # ダメージはない
+        "power": 0,
         "accuracy": 0.7, 
         "category": "status",
         "type": "electric",
-        "effect": {"type": "paralysis", "chance": 1.0} # 100%の確率で「まひ」
+        "effect": {"type": "paralysis", "chance": 1.0}
     },
     "toxic": {
+        "id": "toxic",
         "name": "どくどく",
         "power": 0,
         "accuracy": 0.9,
         "category": "status",
         "type": "poison",
-        "effect": {"type": "toxic", "chance": 1.0} # 100%の確率で「もうどく」
+        "effect": {"type": "toxic", "chance": 1.0}
     },
     "sing": {
+        "id": "sing",
         "name": "うたう",
         "power": 0,
         "accuracy": 0.55,
         "category": "status",
         "type": "normal",
-        "effect": {"type": "sleep", "chance": 1.0} # 100%の確率で「ねむり」
+        "effect": {"type": "sleep", "chance": 1.0}
     },
     "swords_dance": {
+        "id": "swords_dance",
         "name": "つるぎのまい",
         "power": 0,
-        "accuracy": 1.0, # 必中技だが念のため設定
+        "accuracy": 1.0,
         "category": "status",
         "type": "normal",
         "effect": {
-            "type": "stat_change", # 効果の種類
-            "stat": "attack",     # どの能力か
-            "stages": 2,          # 何段階変化させるか
-            "target": "self"      # 誰に使うか (self=自分)
+            "type": "stat_change",
+            "stat": "attack",
+            "stages": 2,
+            "target": "self"
         }
     },
     "ice_beam": {
+        "id": "ice_beam",
         "name": "れいとうビーム",
         "power": 90,
         "accuracy": 1.0,
         "category": "special",
         "type": "ice",
-        "effect": {"type": "freeze", "chance": 1} # 10%の確率で「こおり」
+        "effect": {"type": "freeze", "chance": 1}
     }
 }

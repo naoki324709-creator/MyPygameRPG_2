@@ -118,9 +118,9 @@ class FieldScene(BaseScene):
         if is_grass and random.random() < self.encounter_rate:
             self.steps_since_last_encounter = 0
             # ランダムな野生ポケモンと遭遇
-            wild_pokemon = ["charmander", "squirtle", "bulbasaur", "pidgey"]
+            wild_pokemon = ["pidgey"]
             enemy_id = random.choice(wild_pokemon)
-            enemy_level = random.randint(6,7)
+            enemy_level = 7#random.randint(6,7)
             
             return f"wild_battle|{enemy_id}|{enemy_level}"
         
