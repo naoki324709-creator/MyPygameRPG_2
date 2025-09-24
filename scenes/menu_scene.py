@@ -6,10 +6,11 @@ from ui.components import Button, PokemonInfoPanel
 class MenuScene(BaseScene):
     """メニュー画面シーンクラス"""
     
-    def __init__(self, screen, font, player_party):
+    def __init__(self, screen, font, player_party, inventory):
         super().__init__(screen, font)
         
         self.player_party = player_party
+        self.inventory = inventory # ★ inventory を受け取って保存
         
         # メニューボタン
         self.menu_buttons = [
@@ -20,14 +21,11 @@ class MenuScene(BaseScene):
         ]
         
         self.selected_index = 0
-        # --- ここから変更 ---
-        self.menu_state = "main"  # "main", "pokemon", "rearranging"
+        self.menu_state = "main"
         
-        # ポケモン一覧用
         self.pokemon_buttons = []
         self.selected_pokemon_index = 0
-        self.rearranging_index = None # 並び替え対象のポケモンのインデックス
-        # --- ここまで変更 ---
+        self.rearranging_index = None
         
         self._setup_pokemon_buttons()
         self._update_selection()
@@ -47,7 +45,7 @@ class MenuScene(BaseScene):
         if self.menu_state == "main":
             for i, button in enumerate(self.menu_buttons):
                 button.is_selected = (i == self.selected_index)
-                button.is_enabled = (i != 1) # どうぐは未実装
+                button.is_enabled = True
         
         # --- ここから変更 ---
         elif self.menu_state == "pokemon" or self.menu_state == "rearranging":
@@ -87,6 +85,8 @@ class MenuScene(BaseScene):
                     self.menu_state = "pokemon"
                     self.selected_pokemon_index = 0
                     self._update_selection()
+                elif self.selected_index == 1: # ★ どうぐ
+                    return "to_bag"
                 elif self.selected_index == 2 and self.menu_buttons[2].is_enabled: # セーブ
                     return "save_game"
                 elif self.selected_index == 3:  # もどる
@@ -101,6 +101,8 @@ class MenuScene(BaseScene):
                         self.menu_state = "pokemon"
                         self.selected_pokemon_index = 0
                         self._update_selection()
+                    elif i == 1: # ★ どうぐ
+                        return "to_bag"
                     elif i == 2 and button.is_enabled:
                         return "save_game"
                     elif i == 3:

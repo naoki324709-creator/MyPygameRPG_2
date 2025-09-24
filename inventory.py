@@ -44,16 +44,10 @@ class Inventory:
 
     def get_items_by_battle_pocket(self, battle_pocket_name):
         """戦闘中に指定されたポケットのアイテムリストを返す"""
-        print("--- デバッグ情報 ---")
-        print(f"探しているポケット: {battle_pocket_name}")
-        print(f"現在の所持アイテム一覧: {self.items}")
         items_found = {
             item_id: item_info for item_id, item_info in self.items.items()
             if 'data' in item_info and item_info['data'].get('battle_pocket') == battle_pocket_name
         }
-
-        print(f"見つかったアイテム: {items_found}")
-        print("--------------------")
 
         return items_found
 

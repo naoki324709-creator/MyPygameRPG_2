@@ -71,7 +71,7 @@ class GameManager:
     def start_field(self):
         """フィールドシーンを開始"""
         from scenes.field_scene import FieldScene
-        field_scene = FieldScene(self.screen, self.font, self.player_party,self.player_world_x, self.player_world_y)
+        field_scene = FieldScene(self.screen, self.font, self.player_party, self.player_world_x, self.player_world_y)
         self.change_scene(field_scene)
     
     def start_menu(self):
@@ -81,8 +81,14 @@ class GameManager:
         if self.current_scene and isinstance(self.current_scene, FieldScene):
             self.player_world_x = self.current_scene.player_world_x
             self.player_world_y = self.current_scene.player_world_y
-        menu_scene = MenuScene(self.screen, self.font, self.player_party)
+        menu_scene = MenuScene(self.screen, self.font, self.player_party, self.inventory)
         self.push_scene(menu_scene)
+
+    def start_bag(self):
+        """バッグシーンを開始"""
+        from scenes.bag_scene import BagScene # 新しく作るファイル
+        bag_scene = BagScene(self.screen, self.font, self.inventory)
+        self.push_scene(bag_scene)
     
     def start_title(self):
         """タイトルシーンを開始"""
@@ -314,6 +320,8 @@ class GameManager:
             self.start_battle("charmander", 5)
         elif result == "to_menu":
             self.start_menu()
+        elif result == "to_bag":
+            self.start_bag()
         elif result == "to_title":
             self.start_title()
         elif result == "back":
