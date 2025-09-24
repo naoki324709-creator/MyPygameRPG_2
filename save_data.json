@@ -1,26 +1,72 @@
 {
-    "player_position": {
-        "x": 443,
-        "y": 500
+  "version": "1.0",
+  "timestamp": 59877,
+  "play_time": 59.20200000000313,
+  "player_position": {
+    "x": 449,
+    "y": 557
+  },
+  "game_flags": {},
+  "player_party": [
+    {
+      "id": "bulbasaur",
+      "name": "フシギダネ",
+      "level": 7,
+      "current_hp": 23,
+      "max_hp": 23,
+      "exp": 269,
+      "exp_to_next_level": 314,
+      "status_condition": null,
+      "toxic_counter": 0,
+      "sleep_counter": 0,
+      "types": [
+        "grass",
+        "poison"
+      ],
+      "move_ids": [
+        "turunomuti",
+        "ice_beam",
+        "hinoko",
+        "swords_dance"
+      ]
     },
-    "player_party": [
-        {
-            "id": "bulbasaur",
-            "level": 5,
-            "current_hp": 19,
-            "status_condition": null
-        },
-        {
-            "id": "squirtle",
-            "level": 4,
-            "current_hp": 17,
-            "status_condition": null
-        },
-        {
-            "id": "pidgey",
-            "level": 3,
-            "current_hp": 15,
-            "status_condition": null
-        }
-    ]
+    {
+      "id": "squirtle",
+      "name": "ゼニガメ",
+      "level": 5,
+      "current_hp": 19,
+      "max_hp": 19,
+      "exp": 135,
+      "exp_to_next_level": 179,
+      "status_condition": null,
+      "toxic_counter": 0,
+      "sleep_counter": 0,
+      "types": [
+        "water"
+      ],
+      "move_ids": [
+        "taiatari",
+        "ice_beam"
+      ]
+    },
+    {
+      "id": "pidgey",
+      "name": "ポッポ",
+      "level": 5,
+      "current_hp": 19,
+      "max_hp": 19,
+      "exp": 125,
+      "exp_to_next_level": 216,
+      "status_condition": null,
+      "toxic_counter": 0,
+      "sleep_counter": 0,
+      "types": [
+        "normal",
+        "flying"
+      ],
+      "move_ids": [
+        "taiatari"
+      ]
+    }
+  ]
 }

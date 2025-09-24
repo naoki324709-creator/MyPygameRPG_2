@@ -5,6 +5,7 @@ import json
 import os
 from monster import create_monster
 from party import Party
+from inventory import Inventory
 
 class GameManager:
     """ゲーム全体を管理するクラス"""
@@ -23,7 +24,6 @@ class GameManager:
             self.font = pygame.font.Font(None, 28)
         
         self.clock = pygame.time.Clock()
-
         self.save_file_path = "save_data.json" # セーブファイルの名前を定義
         
         # ゲーム状態
@@ -32,6 +32,7 @@ class GameManager:
         
         # プレイヤーデータ
         self.player_party = Party()
+        self.inventory = Inventory()
         self.player_world_x = 500  # 主人公の初期位置X
         self.player_world_y = 500  # 主人公の初期位置Y
         
@@ -47,8 +48,14 @@ class GameManager:
     def _initialize_player_data(self):
         """プレイヤーの初期データを設定"""
         self.player_party.add_monster(create_monster("bulbasaur", level=5))
-        self.player_party.add_monster(create_monster("squirtle", level=4))
-        self.player_party.add_monster(create_monster("pidgey", level=3))
+        self.player_party.add_monster(create_monster("squirtle", level=5))
+        self.player_party.add_monster(create_monster("pidgey", level=5))
+
+        # ★初期アイテムを設定
+        self.inventory.add_item("monster_ball", 10)
+        self.inventory.add_item("potion", 5)
+        self.inventory.add_item("x_attack", 2)
+        self.inventory.add_item("tm_case", 1)
     
     def start_battle(self, enemy_monster_id, enemy_level=5):
         """バトルシーンを開始"""
@@ -58,7 +65,7 @@ class GameManager:
             self.player_world_x = self.current_scene.player_world_x
             self.player_world_y = self.current_scene.player_world_y
         enemy_monster = create_monster(enemy_monster_id, enemy_level)
-        battle_scene = BattleScene(self.screen, self.font, self.player_party, enemy_monster)
+        battle_scene = BattleScene(self.screen, self.font, self.player_party, self.inventory, enemy_monster)
         self.change_scene(battle_scene)
     
     def start_field(self):

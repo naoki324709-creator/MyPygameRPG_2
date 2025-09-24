@@ -3,14 +3,17 @@ import pygame
 from scenes.base_scene import BaseScene
 from ui.components import Button, HPBar, MessageBox, PokemonInfoPanel
 from battle import Battle
+from sprite_animation import PokemonSprite
+
 
 class BattleScene(BaseScene):
     """バトルシーンクラス"""
     
-    def __init__(self, screen, font, player_party, enemy_monster):
+    def __init__(self, screen, font, player_party, inventory, enemy_monster):
         super().__init__(screen, font)
         
         self.player_party = player_party
+        self.inventory = inventory
         self.enemy_monster = enemy_monster
         self.battle = Battle(player_party.get_active_monster(), enemy_monster)
         
@@ -22,24 +25,61 @@ class BattleScene(BaseScene):
         self.move_buttons = []
         self.party_buttons = []
         self.learn_move_buttons = []
+        self.item_buttons = []
+        self.pocket_buttons = []
         
         self.selected_action_index = 0
         self.selected_move_index = 0
         self.selected_party_index = 0
         self.selected_learn_move_index = 0
+        self.selected_item_index = 0
+        self.selected_pocket_index = 0
+
         
         self.battle_state = "intro"
         self.battle_result = None
         
         # 技習得関連
         self.monster_learning = None
+        self.new_move_queue = []
         self.new_move = None
         self.pending_new_move = None
+
+        self.player_monster_sprite = None
+        self.enemy_monster_sprite = None
+        self._load_sprites()
 
         self.message_box.add_message(f"あ！ やせいの {enemy_monster.name}が とびだしてきた！")
         
         self._setup_action_buttons()
         self._setup_move_buttons()
+
+        self.player_sprite = PokemonSprite(player_party.get_active_monster().base_stats['id'])
+        self.enemy_sprite = PokemonSprite(enemy_monster.base_stats['id'])
+
+    def _load_sprites(self):
+        """ポケモンの画像を読み込む（今は仮の四角形で代用）"""
+        # プレイヤーのポケモンの画像（後ろ姿）
+        try:
+            # player_monster_id = self.battle.player_monster.base_stats['id']
+            # self.player_monster_sprite = pygame.image.load(f'images/{player_monster_id}_back.png').convert_alpha()
+            # 仮の画像
+            self.player_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
+            self.player_monster_sprite.fill(self.GREEN) # 緑色の四角
+        except (pygame.error, FileNotFoundError):
+            self.player_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
+            self.player_monster_sprite.fill(self.GREEN)
+
+        # 敵のポケモンの画像（正面）
+        try:
+            # enemy_monster_id = self.enemy_monster.base_stats['id']
+            # self.enemy_monster_sprite = pygame.image.load(f'images/{enemy_monster_id}_front.png').convert_alpha()
+            # 仮の画像
+            self.enemy_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
+            self.enemy_monster_sprite.fill(self.RED) # 赤色の四角
+        except (pygame.error, FileNotFoundError):
+            self.enemy_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
+            self.enemy_monster_sprite.fill(self.RED)
 
     def _setup_action_buttons(self):
         self.action_buttons.clear()
@@ -48,7 +88,7 @@ class BattleScene(BaseScene):
             x = 570 + (i % 2) * 110
             y = 440 + (i // 2) * 40
             button = Button(x, y, 100, 35, action, self.font)
-            if action in ["バッグ"]: 
+            if action in []: 
                 button.is_enabled = False
             self.action_buttons.append(button)
         self._update_action_selection()
@@ -56,6 +96,23 @@ class BattleScene(BaseScene):
     def _update_action_selection(self):
         for i, button in enumerate(self.action_buttons):
             button.is_selected = (i == self.selected_action_index)
+    
+    def _setup_pocket_buttons(self):
+        """バッグのポケット選択ボタンを作成する"""
+        self.pocket_buttons.clear()
+        # 戦闘中に表示するポケットを定義
+        battle_pockets = ["かいふく", "ボール", "せんとう"]
+        for i, pocket_name in enumerate(battle_pockets):
+            button = Button(600, 50 + i * 60, 150, 50, pocket_name, self.font)
+            button.pocket_name = pocket_name
+            self.pocket_buttons.append(button)
+        self.selected_pocket_index = 0
+        self._update_pocket_selection()
+
+    def _update_pocket_selection(self):
+        """ポケットボタンの選択状態を更新"""
+        for i, button in enumerate(self.pocket_buttons):
+            button.is_selected = (i == self.selected_pocket_index)
 
     def _setup_move_buttons(self):
         self.move_buttons.clear()
@@ -106,6 +163,29 @@ class BattleScene(BaseScene):
         self.selected_learn_move_index = 0
         self._update_learn_move_selection()
     
+    def _setup_item_buttons(self, pocket_name):
+        """指定されたポケットの所持アイテムからボタンを作成する"""
+        self.item_buttons.clear()
+        
+        # inventoryから指定されたポケットのアイテムリストを取得
+        items_in_pocket = self.inventory.get_items_by_battle_pocket(pocket_name)
+        
+        y_offset = 50
+        for item_id, item_info in items_in_pocket.items():
+            text = f"{item_info['data']['name']} x{item_info['count']}"
+            button = Button(50, y_offset, 300, 50, text, self.font)
+            button.item_id = item_id # ボタンにIDを紐付け
+            self.item_buttons.append(button)
+            y_offset += 60
+            
+        self.selected_item_index = 0
+        self._update_item_selection()
+    
+    def _update_item_selection(self):
+        """アイテムボタンの選択状態を更新"""
+        for i, button in enumerate(self.item_buttons):
+            button.is_selected = (i == self.selected_item_index)
+    
     def _update_button_selection(self):
         for i, button in enumerate(self.move_buttons):
             button.is_selected = (i == self.selected_move_index)
@@ -153,6 +233,10 @@ class BattleScene(BaseScene):
             return self._handle_action_selection(event)
         elif self.battle_state == "choosing_move":
             return self._handle_move_selection(event)
+        elif self.battle_state == "choosing_item_pocket": # ★追加
+            return self._handle_pocket_selection(event)
+        elif self.battle_state == "choosing_item": # ★追加
+            return self._handle_item_selection(event)
         elif self.battle_state == "switching":
             return self._handle_party_selection(event)
         elif self.battle_state == "learn_move":
@@ -184,6 +268,9 @@ class BattleScene(BaseScene):
 
                 if self.selected_action_index == 0:  # たたかう
                     self.battle_state = "choosing_move"
+                elif self.selected_action_index == 1: # ★バッグ選択時の処理
+                    self.battle_state = "choosing_item_pocket"
+                    self._setup_pocket_buttons()
                 elif self.selected_action_index == 2:  # ポケモン
                     self.battle_state = "switching"
                     self._setup_party_buttons()
@@ -223,6 +310,45 @@ class BattleScene(BaseScene):
                     self._update_button_selection()
                     self._execute_turn()
                     break
+        return None
+    
+    def _handle_pocket_selection(self, event):
+        """バッグのポケット選択時のイベント処理"""
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_DOWN:
+                self.selected_pocket_index = (self.selected_pocket_index + 1) % len(self.pocket_buttons)
+            elif event.key == pygame.K_UP:
+                self.selected_pocket_index = (self.selected_pocket_index - 1) % len(self.pocket_buttons)
+            self._update_pocket_selection()
+            
+            if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_z]:
+                # アイテムリスト表示へ
+                self.battle_state = "choosing_item"
+                selected_pocket = self.pocket_buttons[self.selected_pocket_index].pocket_name
+                self._setup_item_buttons(selected_pocket) # 選択されたポケットのアイテムをセット
+            elif event.key == pygame.K_ESCAPE:
+                self.battle_state = "choosing_action"
+        return None
+
+    def _handle_item_selection(self, event):
+        """バッグのアイテム選択時のイベント処理"""
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_DOWN:
+                if self.item_buttons: self.selected_item_index = (self.selected_item_index + 1) % len(self.item_buttons)
+            elif event.key == pygame.K_UP:
+                if self.item_buttons: self.selected_item_index = (self.selected_item_index - 1) % len(self.item_buttons)
+            self._update_item_selection()
+            
+            if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_z]:
+                if self.item_buttons:
+                    # ここで実際にアイテムを使う処理を後で追加
+                    selected_button = self.item_buttons[self.selected_item_index]
+                    item_data = self.inventory.get_item_details(selected_button.item_id)
+                    self.message_box.add_message(f"{item_data['name']} を つかった！")
+                    self.message_box.add_message("しかし なにも おこらなかった！")
+                    self.battle_state = "message_display"
+            elif event.key == pygame.K_ESCAPE:
+                self.battle_state = "choosing_item_pocket" # ポケット選択に戻る
         return None
     
     def _handle_party_selection(self, event):
@@ -361,16 +487,19 @@ class BattleScene(BaseScene):
             else:
                 self.battle_state = "choosing_action"
 
+        self.player_sprite.update(dt)
+        self.enemy_sprite.update(dt)
+
     def draw(self):
         """描画処理"""
         # 背景
         self.screen.fill(self.BACKGROUND_GREEN)
         
         # ポケモン描画エリア
-        player_area = pygame.Rect(100, 280, 120, 100)
-        enemy_area = pygame.Rect(500, 120, 100, 80)
-        pygame.draw.rect(self.screen, self.DARK_GRAY, player_area)
-        pygame.draw.rect(self.screen, self.DARK_GRAY, enemy_area)
+        if self.player_monster_sprite:
+            self.screen.blit(self.player_monster_sprite, (100, 190))
+        if self.enemy_monster_sprite:
+            self.screen.blit(self.enemy_monster_sprite, (550, 50))
         
         # ポケモン情報パネル
         self.player_info.draw(self.screen, self.battle.player_monster)
@@ -381,6 +510,10 @@ class BattleScene(BaseScene):
             self._draw_action_selection()
         elif self.battle_state == "choosing_move": 
             self._draw_move_selection()
+        elif self.battle_state == "choosing_item_pocket": 
+            self._draw_bag_ui() # ★変更
+        elif self.battle_state == "choosing_item": 
+            self._draw_bag_ui() # ★変更
         elif self.battle_state == "switching": 
             self._draw_party_selection()
         elif self.battle_state == "learn_move": 
@@ -388,8 +521,14 @@ class BattleScene(BaseScene):
         elif self.battle_state == "over": 
             self._draw_battle_over()
         
+        if self.battle_state not in ["choosing_action", "choosing_item_pocket", "choosing_item"]:
+            self.message_box.draw(self.screen)
+        
         # メッセージボックス
         self.message_box.draw(self.screen)
+
+        self.player_sprite.draw(self.screen, 160, 330, scale=2.0)  # プレイヤー側
+        self.enemy_sprite.draw(self.screen, 550, 200, scale=1.5)   # 敵側
 
     def _draw_action_selection(self):
         prompt_rect = pygame.Rect(50, 420, 500, 150)
@@ -421,3 +560,28 @@ class BattleScene(BaseScene):
         self.draw_text("どの わざを わすれさせますか？", 400, 50, self.BLACK, center=True)
         for button in self.learn_move_buttons:
             button.draw(self.screen)
+
+    def _draw_bag_ui(self):
+        """バッグのUIを描画（ポケットとアイテムリスト）"""
+        # 背景と枠
+        pygame.draw.rect(self.screen, (240, 240, 240), [20, 20, 760, 380])
+        pygame.draw.rect(self.screen, (0, 0, 0), [20, 20, 760, 380], 3)
+        
+        # アイテムリストの背景
+        pygame.draw.rect(self.screen, (50, 50, 50), [40, 40, 500, 340])
+        
+        # ポケットのボタンを描画
+        for button in self.pocket_buttons:
+            button.draw(self.screen)
+            
+        # アイテムリストのボタンを描画
+        for button in self.item_buttons:
+            button.draw(self.screen)
+
+        # アイテム説明欄
+        if self.battle_state == "choosing_item" and self.item_buttons:
+            if 0 <= self.selected_item_index < len(self.item_buttons):
+                selected_button = self.item_buttons[self.selected_item_index]
+                item_data = self.inventory.get_item_details(selected_button.item_id)
+                if item_data:
+                    self.draw_text(item_data['description'], 50, 350, self.WHITE)
