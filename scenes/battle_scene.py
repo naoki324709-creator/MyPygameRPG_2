@@ -1,10 +1,38 @@
-# scenes/battle_scene.py
+# scenes/battle_scene.py - 完全版
 import pygame
 from scenes.base_scene import BaseScene
-from ui.components import Button, HPBar, MessageBox, PokemonInfoPanel
+from ui.components import Button, HPBar, ImageMessageBox, PokemonInfoPanel
 from battle import Battle
-from sprite_animation import PokemonSprite
 
+# スプライトシステムの読み込み
+try:
+    from sprite_animation import PokemonSprite
+    SPRITES_AVAILABLE = True
+except ImportError:
+    SPRITES_AVAILABLE = False
+    print("Warning: sprite_animation.py not found, using simple rectangles")
+
+class SimplePokemonSprite:
+    """スプライトが利用できない場合の代替クラス"""
+    def __init__(self, pokemon_id, facing_direction="front"):
+        self.pokemon_id = pokemon_id
+        self.facing_direction = facing_direction
+        self.color = (0, 255, 0) if "bulbasaur" in pokemon_id else (255, 0, 0)
+        if facing_direction == "back":
+            self.color = tuple(max(0, c - 50) for c in self.color)  # 背面は少し暗く
+    
+    def update(self, dt):
+        pass
+    
+    def draw(self, screen, x, y, scale=1.0):
+        size = int(64 * scale)
+        rect = pygame.Rect(x - size//2, y - size//2, size, size)
+        pygame.draw.rect(screen, self.color, rect)
+        # 背面の場合は「B」、正面の場合は「F」を描画
+        font = pygame.font.Font(None, int(24 * scale))
+        text = font.render("B" if self.facing_direction == "back" else "F", True, (255, 255, 255))
+        text_rect = text.get_rect(center=rect.center)
+        screen.blit(text, text_rect)
 
 class BattleScene(BaseScene):
     """バトルシーンクラス"""
@@ -17,7 +45,12 @@ class BattleScene(BaseScene):
         self.enemy_monster = enemy_monster
         self.battle = Battle(player_party.get_active_monster(), enemy_monster)
         
-        self.message_box = MessageBox(50, 420, 700, 150, font)
+        # 画像ベースのメッセージボックスを使用
+        self.message_box = ImageMessageBox(50, 420, 700, 150, font, "ui/textbox.png")
+        
+        # アクション選択時専用の画像メッセージボックス
+        self.action_message_box = ImageMessageBox(50, 420, 500, 150, font, "ui/textbox.png")
+        
         self.player_info = PokemonInfoPanel(450, 300, 300, 120, font)
         self.enemy_info = PokemonInfoPanel(50, 50, 300, 120, font)
         
@@ -34,52 +67,63 @@ class BattleScene(BaseScene):
         self.selected_learn_move_index = 0
         self.selected_item_index = 0
         self.selected_pocket_index = 0
-
         
         self.battle_state = "intro"
         self.battle_result = None
         
         # 技習得関連
         self.monster_learning = None
-        self.new_move_queue = []
         self.new_move = None
         self.pending_new_move = None
 
-        self.player_monster_sprite = None
-        self.enemy_monster_sprite = None
-        self._load_sprites()
+        # スプライト初期化
+        self._load_pokemon_sprites()
 
         self.message_box.add_message(f"あ！ やせいの {enemy_monster.name}が とびだしてきた！")
         
         self._setup_action_buttons()
         self._setup_move_buttons()
+        
+        # アクション選択時のメッセージを準備
+        self._setup_action_message()
 
-        self.player_sprite = PokemonSprite(player_party.get_active_monster().base_stats['id'])
-        self.enemy_sprite = PokemonSprite(enemy_monster.base_stats['id'])
+    def _load_pokemon_sprites(self):
+        """ポケモンスプライトを読み込み"""
+        player_id = self.battle.player_monster.base_stats['id']
+        enemy_id = self.enemy_monster.base_stats['id']
+        
+        if SPRITES_AVAILABLE:
+            # sprite_animation.pyが正面・背面対応している場合
+            try:
+                self.player_sprite = PokemonSprite(player_id, "back")
+                self.enemy_sprite = PokemonSprite(enemy_id, "front")
+            except TypeError:
+                # 古いsprite_animation.pyの場合（facing_direction引数なし）
+                self.player_sprite = PokemonSprite(player_id)
+                self.enemy_sprite = PokemonSprite(enemy_id)
+        else:
+            # 代替スプライト
+            self.player_sprite = SimplePokemonSprite(player_id, "back")
+            self.enemy_sprite = SimplePokemonSprite(enemy_id, "front")
 
-    def _load_sprites(self):
-        """ポケモンの画像を読み込む（今は仮の四角形で代用）"""
-        # プレイヤーのポケモンの画像（後ろ姿）
-        try:
-            # player_monster_id = self.battle.player_monster.base_stats['id']
-            # self.player_monster_sprite = pygame.image.load(f'images/{player_monster_id}_back.png').convert_alpha()
-            # 仮の画像
-            self.player_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
-            self.player_monster_sprite.fill(self.GREEN) # 緑色の四角
-        except (pygame.error, FileNotFoundError):
-            self.player_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
-            self.player_monster_sprite.fill(self.GREEN)
-
-        # 敵のポケモンの画像（正面）
-        try:
-            # enemy_monster_id = self.enemy_monster.base_stats['id']
-            # self.enemy_monster_sprite = pygame.image.load(f'images/{enemy_monster_id}_front.png').convert_alpha()
-            # 仮の画像
-            self.enemy_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
-            self.enemy_monster_sprite.fill(self.RED) # 赤色の四角
-        except (pygame.error, FileNotFoundError):
-            self.enemy_monster_sprite = pygame.Surface((128, 128), pygame.SRCALPHA)
-            self.enemy_monster_sprite.fill(self.RED)
+    def _setup_action_message(self):
+        """アクション選択時のメッセージを設定"""
+        action_text = f"{self.battle.player_monster.name} は どうする？"
+        self.action_message_box.add_message(action_text)
+    
+    def _update_action_message(self):
+        """アクション選択時のメッセージを更新（ポケモンが変わった時用）"""
+        # 既存のメッセージをクリア
+        self.action_message_box.messages.clear()
+        self.action_message_box.current_message = ""
+        self.action_message_box.char_index = 0
+        self.action_message_box.is_finished = True
+        self.action_message_box.waiting_for_input = False
+        self.action_message_box.is_typing = False
+        
+        # 新しいメッセージを設定
+        action_text = f"{self.battle.player_monster.name} は どうする？"
+        self.action_message_box.add_message(action_text)
 
     def _setup_action_buttons(self):
         self.action_buttons.clear()
@@ -88,8 +132,6 @@ class BattleScene(BaseScene):
             x = 570 + (i % 2) * 110
             y = 440 + (i // 2) * 40
             button = Button(x, y, 100, 35, action, self.font)
-            if action in []: 
-                button.is_enabled = False
             self.action_buttons.append(button)
         self._update_action_selection()
 
@@ -100,7 +142,6 @@ class BattleScene(BaseScene):
     def _setup_pocket_buttons(self):
         """バッグのポケット選択ボタンを作成する"""
         self.pocket_buttons.clear()
-        # 戦闘中に表示するポケットを定義
         battle_pockets = ["かいふく", "ボール", "せんとう"]
         for i, pocket_name in enumerate(battle_pockets):
             button = Button(600, 50 + i * 60, 150, 50, pocket_name, self.font)
@@ -167,14 +208,13 @@ class BattleScene(BaseScene):
         """指定されたポケットの所持アイテムからボタンを作成する"""
         self.item_buttons.clear()
         
-        # inventoryから指定されたポケットのアイテムリストを取得
         items_in_pocket = self.inventory.get_items_by_battle_pocket(pocket_name)
         
         y_offset = 50
         for item_id, item_info in items_in_pocket.items():
             text = f"{item_info['data']['name']} x{item_info['count']}"
             button = Button(50, y_offset, 300, 50, text, self.font)
-            button.item_id = item_id # ボタンにIDを紐付け
+            button.item_id = item_id
             self.item_buttons.append(button)
             y_offset += 60
             
@@ -200,12 +240,10 @@ class BattleScene(BaseScene):
     
     def _reset_all_stat_stages(self):
         """バトル終了時に全ポケモンの能力ランクをリセットする"""
-        # プレイヤーの全ポケモンの能力ランクをリセット
         for pokemon in self.player_party.members:
             for stat in pokemon.stat_stages:
                 pokemon.stat_stages[stat] = 0
         
-        # 敵ポケモンもリセット
         if self.enemy_monster:
             for stat in self.enemy_monster.stat_stages:
                 self.enemy_monster.stat_stages[stat] = 0
@@ -223,6 +261,20 @@ class BattleScene(BaseScene):
         switch_message = self.battle.switch_player_monster(monster)
         self.message_box.add_message(switch_message)
         self._setup_move_buttons()
+        
+        # アクションメッセージも更新
+        self._update_action_message()
+        
+        # ポケモン交代時にスプライトも更新
+        player_id = monster.base_stats['id']
+        if SPRITES_AVAILABLE:
+            try:
+                self.player_sprite = PokemonSprite(player_id, "back")
+            except TypeError:
+                self.player_sprite = PokemonSprite(player_id)
+        else:
+            self.player_sprite = SimplePokemonSprite(player_id, "back")
+        
         self.battle_state = "message_display"
     
     def handle_event(self, event):
@@ -233,9 +285,9 @@ class BattleScene(BaseScene):
             return self._handle_action_selection(event)
         elif self.battle_state == "choosing_move":
             return self._handle_move_selection(event)
-        elif self.battle_state == "choosing_item_pocket": # ★追加
+        elif self.battle_state == "choosing_item_pocket":
             return self._handle_pocket_selection(event)
-        elif self.battle_state == "choosing_item": # ★追加
+        elif self.battle_state == "choosing_item":
             return self._handle_item_selection(event)
         elif self.battle_state == "switching":
             return self._handle_party_selection(event)
@@ -268,7 +320,7 @@ class BattleScene(BaseScene):
 
                 if self.selected_action_index == 0:  # たたかう
                     self.battle_state = "choosing_move"
-                elif self.selected_action_index == 1: # ★バッグ選択時の処理
+                elif self.selected_action_index == 1:  # バッグ
                     self.battle_state = "choosing_item_pocket"
                     self._setup_pocket_buttons()
                 elif self.selected_action_index == 2:  # ポケモン
@@ -277,7 +329,7 @@ class BattleScene(BaseScene):
                 elif self.selected_action_index == 3:  # にげる
                     self.message_box.add_message("うまく にげきれた！")
                     self.battle_result = "escaped"
-                    self._reset_all_stat_stages()  # 逃走時も能力ランクリセット
+                    self._reset_all_stat_stages()
                     self.battle_state = "message_display"
         return None
     
@@ -303,13 +355,6 @@ class BattleScene(BaseScene):
                 self._execute_turn()
             elif event.key == pygame.K_ESCAPE: 
                 self.battle_state = "choosing_action"
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            for i, button in enumerate(self.move_buttons):
-                if button.is_clicked(event.pos):
-                    self.selected_move_index = i
-                    self._update_button_selection()
-                    self._execute_turn()
-                    break
         return None
     
     def _handle_pocket_selection(self, event):
@@ -322,10 +367,9 @@ class BattleScene(BaseScene):
             self._update_pocket_selection()
             
             if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_z]:
-                # アイテムリスト表示へ
                 self.battle_state = "choosing_item"
                 selected_pocket = self.pocket_buttons[self.selected_pocket_index].pocket_name
-                self._setup_item_buttons(selected_pocket) # 選択されたポケットのアイテムをセット
+                self._setup_item_buttons(selected_pocket)
             elif event.key == pygame.K_ESCAPE:
                 self.battle_state = "choosing_action"
         return None
@@ -334,21 +378,22 @@ class BattleScene(BaseScene):
         """バッグのアイテム選択時のイベント処理"""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
-                if self.item_buttons: self.selected_item_index = (self.selected_item_index + 1) % len(self.item_buttons)
+                if self.item_buttons: 
+                    self.selected_item_index = (self.selected_item_index + 1) % len(self.item_buttons)
             elif event.key == pygame.K_UP:
-                if self.item_buttons: self.selected_item_index = (self.selected_item_index - 1) % len(self.item_buttons)
+                if self.item_buttons: 
+                    self.selected_item_index = (self.selected_item_index - 1) % len(self.item_buttons)
             self._update_item_selection()
             
             if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_z]:
                 if self.item_buttons:
-                    # ここで実際にアイテムを使う処理を後で追加
                     selected_button = self.item_buttons[self.selected_item_index]
                     item_data = self.inventory.get_item_details(selected_button.item_id)
                     self.message_box.add_message(f"{item_data['name']} を つかった！")
                     self.message_box.add_message("しかし なにも おこらなかった！")
                     self.battle_state = "message_display"
             elif event.key == pygame.K_ESCAPE:
-                self.battle_state = "choosing_item_pocket" # ポケット選択に戻る
+                self.battle_state = "choosing_item_pocket"
         return None
     
     def _handle_party_selection(self, event):
@@ -364,11 +409,6 @@ class BattleScene(BaseScene):
                     self._switch_pokemon(self.party_buttons[self.selected_party_index].monster)
             elif event.key == pygame.K_ESCAPE: 
                 self.battle_state = "choosing_action"
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            for button in self.party_buttons:
-                if button.is_clicked(event.pos): 
-                    self._switch_pokemon(button.monster)
-                    break
         return None
     
     def _handle_learn_move_selection(self, event):
@@ -394,12 +434,8 @@ class BattleScene(BaseScene):
                 for msg in additional_messages:
                     self.message_box.add_message(msg)
                 
-                # 次に覚える技があるかチェック（リスト対応）
                 if next_new_move:
-                    if isinstance(next_new_move, list):
-                        self.pending_new_move = next_new_move[0] if next_new_move else None
-                    else:
-                        self.pending_new_move = next_new_move
+                    self.pending_new_move = next_new_move
                     self.selected_learn_move_index = 0
                 else:
                     self.pending_new_move = None
@@ -411,6 +447,7 @@ class BattleScene(BaseScene):
 
     def update(self, dt):
         self.message_box.update(dt)
+        self.action_message_box.update(dt)  # アクションメッセージボックスの更新
 
         # 状態1: 登場メッセージの表示中
         if self.battle_state == "intro":
@@ -452,18 +489,11 @@ class BattleScene(BaseScene):
                     for msg in messages: 
                         self.message_box.add_message(msg)
                     
-                    # new_moveが技オブジェクトかリストかをチェック
                     if new_move:
                         self.monster_learning = self.battle.player_monster
-                        # new_moveがリストの場合は最初の技を取得
-                        if isinstance(new_move, list):
-                            self.new_move = new_move[0] if new_move else None
-                        else:
-                            self.new_move = new_move
-                        
-                        if self.new_move:
-                            self.message_box.add_message(f"おや…？ {self.monster_learning.name}の ようすが…")
-                            self.message_box.add_message(f"{self.monster_learning.name}は {self.new_move['name']}を おぼえようとしている！")
+                        self.new_move = new_move
+                        self.message_box.add_message(f"おや…？ {self.monster_learning.name}の ようすが…")
+                        self.message_box.add_message(f"{self.monster_learning.name}は {self.new_move['name']}を おぼえようとしている！")
                     
                     # バトル終了時に能力ランクをリセット
                     self._reset_all_stat_stages()
@@ -487,6 +517,7 @@ class BattleScene(BaseScene):
             else:
                 self.battle_state = "choosing_action"
 
+        # スプライトアニメーションの更新
         self.player_sprite.update(dt)
         self.enemy_sprite.update(dt)
 
@@ -495,15 +526,13 @@ class BattleScene(BaseScene):
         # 背景
         self.screen.fill(self.BACKGROUND_GREEN)
         
-        # ポケモン描画エリア
-        if self.player_monster_sprite:
-            self.screen.blit(self.player_monster_sprite, (100, 190))
-        if self.enemy_monster_sprite:
-            self.screen.blit(self.enemy_monster_sprite, (550, 50))
-        
         # ポケモン情報パネル
         self.player_info.draw(self.screen, self.battle.player_monster)
         self.enemy_info.draw(self.screen, self.enemy_monster)
+        
+        # ポケモンスプライトを描画
+        self.player_sprite.draw(self.screen, 160, 350, scale=3.0)  # プレイヤー側（背面・左下）
+        self.enemy_sprite.draw(self.screen, 550, 180, scale=2.5)   # 敵側（正面・右上）
         
         # 状態に応じたUI描画
         if self.battle_state == "choosing_action": 
@@ -511,9 +540,9 @@ class BattleScene(BaseScene):
         elif self.battle_state == "choosing_move": 
             self._draw_move_selection()
         elif self.battle_state == "choosing_item_pocket": 
-            self._draw_bag_ui() # ★変更
+            self._draw_bag_ui()
         elif self.battle_state == "choosing_item": 
-            self._draw_bag_ui() # ★変更
+            self._draw_bag_ui()
         elif self.battle_state == "switching": 
             self._draw_party_selection()
         elif self.battle_state == "learn_move": 
@@ -521,20 +550,15 @@ class BattleScene(BaseScene):
         elif self.battle_state == "over": 
             self._draw_battle_over()
         
+        # メッセージボックス
         if self.battle_state not in ["choosing_action", "choosing_item_pocket", "choosing_item"]:
             self.message_box.draw(self.screen)
-        
-        # メッセージボックス
-        self.message_box.draw(self.screen)
-
-        self.player_sprite.draw(self.screen, 160, 330, scale=2.0)  # プレイヤー側
-        self.enemy_sprite.draw(self.screen, 550, 200, scale=1.5)   # 敵側
 
     def _draw_action_selection(self):
-        prompt_rect = pygame.Rect(50, 420, 500, 150)
-        pygame.draw.rect(self.screen, (240, 240, 240), prompt_rect)
-        pygame.draw.rect(self.screen, (0, 0, 0), prompt_rect, 3)
-        self.draw_text(f"{self.battle.player_monster.name} は どうする？", 70, 440)
+        # 画像ベースのメッセージボックスを描画
+        self.action_message_box.draw(self.screen)
+        
+        # アクションボタンを描画
         for button in self.action_buttons:
             button.draw(self.screen)
 
@@ -551,6 +575,10 @@ class BattleScene(BaseScene):
     def _draw_battle_over(self):
         self.draw_text("何かキーを押してください", 400, 500, self.BLACK, center=True)
 
+    def _draw_learn_move_selection(self):
+        overlay = pygame.Surface((800, 600), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
     def _draw_learn_move_selection(self):
         overlay = pygame.Surface((800, 600), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))

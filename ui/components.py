@@ -1,5 +1,6 @@
-# ui/components.py
+# ui/components.py - 画像メッセージボックス追加版
 import pygame
+import os
 
 class Button:
     """ボタンクラス"""
@@ -69,7 +70,7 @@ class HPBar:
             pygame.draw.rect(screen, color, hp_rect)
 
 class MessageBox:
-    """文字を順に表示する機能を持つメッセージボックスクラス"""
+    """文字を順に表示する機能を持つメッセージボックスクラス（従来版）"""
     def __init__(self, x, y, width, height, font):
         self.rect = pygame.Rect(x, y, width, height)
         self.font = font
@@ -137,6 +138,197 @@ class MessageBox:
         text_surface = self.font.render(text_to_draw, True, self.text_color)
         screen.blit(text_surface, (self.rect.x + 15, self.rect.y + 10))
 
+class ImageMessageBox:
+    """画像ベースのメッセージボックスクラス"""
+    
+    def __init__(self, x, y, width, height, font, image_path="ui/textbox.png"):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.font = font
+        
+        # 画像の読み込み
+        self.load_image(image_path)
+        
+        # テキスト関連
+        self.messages = []
+        self.current_message = ""
+        self.char_index = 0
+        self.char_timer = 0
+        self.char_speed = 0.03  # 文字表示速度（秒）
+        self.line_height = 55
+        self.max_lines = 4
+        self.text_margin_x = 35  # 左右の余白を大きく
+        self.text_margin_y = 25  # 上下の余白を大きく
+        
+        # 状態管理
+        self.is_typing = False
+        self.is_finished = True
+        self.waiting_for_input = False
+    
+    def load_image(self, image_path):
+        """テキストボックス画像を読み込み"""
+        try:
+            if os.path.exists(image_path):
+                self.bg_image = pygame.image.load(image_path).convert_alpha()
+                # 指定されたサイズに画像をリサイズ
+                self.bg_image = pygame.transform.scale(self.bg_image, (self.width, self.height))
+                print(f"[INFO] テキストボックス画像を読み込み: {image_path}")
+            else:
+                print(f"[WARNING] 画像が見つかりません: {image_path}")
+                self.create_default_image()
+        except Exception as e:
+            print(f"[ERROR] 画像読み込みエラー: {e}")
+            self.create_default_image()
+    
+    def create_default_image(self):
+        """デフォルトのテキストボックス画像を作成"""
+        self.bg_image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        
+        # ポケモン風のテキストボックスを描画
+        # ベース色（薄いクリーム色）
+        base_color = (248, 248, 240)
+        border_color = (72, 72, 72)
+        shadow_color = (200, 200, 200)
+        accent_color = (100, 150, 255)
+        
+        # メインのボックス
+        pygame.draw.rect(self.bg_image, base_color, (0, 0, self.width, self.height))
+        
+        # 外枠
+        pygame.draw.rect(self.bg_image, border_color, (0, 0, self.width, self.height), 4)
+        
+        # 内側の影効果
+        pygame.draw.rect(self.bg_image, shadow_color, (4, 4, self.width-8, 4))  # 上
+        pygame.draw.rect(self.bg_image, shadow_color, (4, 4, 4, self.height-8))  # 左
+        
+        # 角の装飾
+        corner_size = 16
+        corners = [
+            (8, 8),  # 左上
+            (self.width-corner_size-8, 8),  # 右上
+            (8, self.height-corner_size-8),  # 左下
+            (self.width-corner_size-8, self.height-corner_size-8)  # 右下
+        ]
+        
+        for corner_x, corner_y in corners:
+            pygame.draw.rect(self.bg_image, accent_color, 
+                           (corner_x, corner_y, corner_size, corner_size))
+            pygame.draw.rect(self.bg_image, border_color, 
+                           (corner_x, corner_y, corner_size, corner_size), 2)
+    
+    def add_message(self, message):
+        """メッセージを追加"""
+        if message:
+            self.messages.append(message)
+            if not self.is_typing and self.is_finished:
+                self._start_next_message()
+    
+    def _start_next_message(self):
+        """次のメッセージの表示開始"""
+        if self.messages:
+            self.current_message = self.messages.pop(0)
+            self.char_index = 0
+            self.char_timer = 0
+            self.is_typing = True
+            self.is_finished = False
+            self.waiting_for_input = False
+    
+    def update(self, dt):
+        """更新処理"""
+        if self.is_typing:
+            self.char_timer += dt
+            
+            # 文字を1つずつ表示
+            if self.char_timer >= self.char_speed:
+                self.char_index += 1
+                self.char_timer = 0
+                
+                # メッセージの表示完了
+                if self.char_index >= len(self.current_message):
+                    self.is_typing = False
+                    self.waiting_for_input = True
+    
+    def handle_input(self):
+        """入力処理（Enter/Spaceキー）"""
+        if self.is_typing:
+            # タイピング中の場合は即座に全文表示
+            self.char_index = len(self.current_message)
+            self.is_typing = False
+            self.waiting_for_input = True
+        elif self.waiting_for_input:
+            # 次のメッセージへ進む
+            if self.messages:
+                self._start_next_message()
+            else:
+                self.is_finished = True
+                self.waiting_for_input = False
+    
+    def draw(self, screen):
+        """描画処理"""
+        # 背景画像を描画
+        screen.blit(self.bg_image, (self.x, self.y))
+        
+        # テキスト表示領域の設定（左右と上下の余白を個別に設定）
+        text_x = self.x + self.text_margin_x
+        text_y = self.y + self.text_margin_y
+        text_width = self.width - (self.text_margin_x * 2)
+        
+        if self.current_message:
+            # 現在表示中の文字列
+            display_text = self.current_message[:self.char_index]
+            
+            # テキストを行に分割して表示
+            self._draw_wrapped_text(screen, display_text, text_x, text_y, text_width)
+        
+        # 入力待ちインジケーター
+        if self.waiting_for_input:
+            self._draw_input_indicator(screen)
+    
+    def _draw_wrapped_text(self, screen, text, x, y, max_width):
+        """テキストを複数行に分けて描画"""
+        words = text.split(' ')
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            test_line = current_line + (" " if current_line else "") + word
+            text_surface = self.font.render(test_line, True, (0, 0, 0))
+            
+            if text_surface.get_width() <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                    current_line = word
+                else:
+                    lines.append(word)
+        
+        if current_line:
+            lines.append(current_line)
+        
+        # 各行を描画
+        for i, line in enumerate(lines[:self.max_lines]):
+            line_surface = self.font.render(line, True, (0, 0, 0))
+            screen.blit(line_surface, (x, y + i * self.line_height))
+    
+    def _draw_input_indicator(self, screen):
+        """入力待ちのインジケーターを描画"""
+        # 右下角に小さな三角形を描画
+        indicator_x = self.x + self.width - 30
+        indicator_y = self.y + self.height - 25
+        
+        # 点滅効果
+        import time
+        if int(time.time() * 2) % 2:  # 0.5秒間隔で点滅
+            points = [
+                (indicator_x, indicator_y),
+                (indicator_x + 15, indicator_y),
+                (indicator_x + 7, indicator_y + 10)
+            ]
+            pygame.draw.polygon(screen, (0, 0, 0), points)
+
 class PokemonInfoPanel:
     """ポケモン情報パネル"""
     def __init__(self, x, y, width, height, font):
@@ -177,3 +369,58 @@ class PokemonInfoPanel:
             status_text = status_map.get(pokemon.status_condition, pokemon.status_condition)
             status_surface = self.font.render(status_text, True, (255, 0, 0))
             screen.blit(status_surface, (self.rect.x + 200, self.rect.y + 10))
+
+# デフォルト画像作成用の関数
+def create_default_textbox_image():
+    """ポケモン風テキストボックス画像を作成"""
+    import os
+    pygame.init()
+    
+    width, height = 700, 150
+    surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    
+    # ベース色（薄いクリーム色）
+    base_color = (248, 248, 240)
+    border_color = (72, 72, 72)
+    shadow_color = (200, 200, 200)
+    accent_color = (100, 150, 255)
+    
+    # メインのボックス
+    pygame.draw.rect(surface, base_color, (0, 0, width, height))
+    
+    # 外枠
+    pygame.draw.rect(surface, border_color, (0, 0, width, height), 4)
+    
+    # 内側の影効果
+    pygame.draw.rect(surface, shadow_color, (4, 4, width-8, 4))  # 上
+    pygame.draw.rect(surface, shadow_color, (4, 4, 4, height-8))  # 左
+    
+    # 角の装飾
+    corner_size = 20
+    corners = [
+        (8, 8),  # 左上
+        (width-corner_size-8, 8),  # 右上
+        (8, height-corner_size-8),  # 左下
+        (width-corner_size-8, height-corner_size-8)  # 右下
+    ]
+    
+    for corner_x, corner_y in corners:
+        # 角の背景
+        pygame.draw.rect(surface, accent_color, 
+                        (corner_x, corner_y, corner_size, corner_size))
+        # 角の枠
+        pygame.draw.rect(surface, border_color, 
+                        (corner_x, corner_y, corner_size, corner_size), 2)
+    
+    # ディレクトリ作成
+    os.makedirs("ui", exist_ok=True)
+    
+    # 画像を保存
+    pygame.image.save(surface, "ui/textbox_default.png")
+    print("デフォルトテキストボックス画像を作成: ui/textbox_default.png")
+    
+    pygame.quit()
+
+if __name__ == "__main__":
+    # デフォルト画像の作成
+    create_default_textbox_image()
