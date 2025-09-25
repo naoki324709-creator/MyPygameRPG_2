@@ -17,7 +17,7 @@ MONSTER_DATABASE = {
         "base_sp_attack": 650,
         "base_sp_defense": 65,
         "base_speed": 400,
-        "moves": ["taiatari", "ice_beam", "hinoko", "swords_dance"]
+        "moves": ["tackle", "ice_beam", "hinoko", "swords_dance"]
     },
     "charmander": {
         "name": "ヒトカゲ",
@@ -33,7 +33,7 @@ MONSTER_DATABASE = {
         "base_sp_attack": 60,
         "base_sp_defense": 50,
         "base_speed": 65,
-        "moves": ["taiatari"]
+        "moves": ["tackle"]
     },
     "squirtle": {
         "name": "ゼニガメ",
@@ -49,7 +49,7 @@ MONSTER_DATABASE = {
         "base_sp_attack": 50,
         "base_sp_defense": 64,
         "base_speed": 43,
-        "moves": ["taiatari", "ice_beam"]
+        "moves": ["tackle", "ice_beam"]
     },
     "pidgey": {
         "name": "ポッポ",
@@ -65,6 +65,6 @@ MONSTER_DATABASE = {
         "base_sp_attack": 35,
         "base_sp_defense": 35,
         "base_speed": 56,
-        "moves": ["taiatari"]
+        "moves": ["tackle"]
     }
 }

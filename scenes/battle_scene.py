@@ -49,7 +49,7 @@ class BattleScene(BaseScene):
         self.message_box = ImageMessageBox(50, 420, 700, 150, font, "ui/textbox.png")
         
         # アクション選択時専用の画像メッセージボックス
-        self.action_message_box = ImageMessageBox(50, 420, 500, 150, font, "ui/textbox.png")
+        self.action_message_box = ImageMessageBox(50, 420, 430, 150, font, "ui/textbox.png")
         
         self.player_info = PokemonInfoPanel(450, 300, 300, 120, font)
         self.enemy_info = PokemonInfoPanel(50, 50, 300, 120, font)
@@ -80,6 +80,21 @@ class BattleScene(BaseScene):
         self._load_pokemon_sprites()
 
         self.message_box.add_message(f"あ！ やせいの {enemy_monster.name}が とびだしてきた！")
+
+        try:
+            panel_image = pygame.image.load("ui/action_panel.png").convert_alpha()
+            # パネルのサイズに合わせて画像をリサイズ
+            self.action_panel_image = pygame.transform.scale(panel_image, (320, 150))
+        except pygame.error:
+            print("[WARNING] アクションパネルの画像 'ui/action_panel.png' が見つかりません。")
+            self.action_panel_image = None # 画像がない場合はNoneに設定
+        
+         # ドット絵風の縦長カーソル画像を作成
+        self.cursor_image = pygame.Surface((30, 30), pygame.SRCALPHA) # カーソルの画像サイズを定義
+        # 小さな四角形を組み合わせてドット絵風の「▶」を描画
+        pygame.draw.rect(self.cursor_image, self.BLACK, (0, 0, 6, 22))  # 左辺のrect。高さを22にして長くする
+        pygame.draw.rect(self.cursor_image, self.BLACK, (6, 4, 6, 14))  # 中央のrect
+        pygame.draw.rect(self.cursor_image, self.BLACK, (12, 8, 6, 6))  # 右端（先端）のrect
         
         self._setup_action_buttons()
         self._setup_move_buttons()
@@ -126,14 +141,9 @@ class BattleScene(BaseScene):
         self.action_message_box.add_message(action_text)
 
     def _setup_action_buttons(self):
-        self.action_buttons.clear()
-        actions = ["たたかう", "バッグ", "ポケモン", "にげる"]
-        for i, action in enumerate(actions):
-            x = 570 + (i % 2) * 110
-            y = 440 + (i // 2) * 40
-            button = Button(x, y, 100, 35, action, self.font)
-            self.action_buttons.append(button)
-        self._update_action_selection()
+        # 4つのButtonオブジェクトを作成する代わりに、アクションのテキストリストを定義
+        self.action_texts = ["たたかう", "バッグ", "ポケモン", "にげる"]
+        # ボタンの選択状態更新メソッドは描画時に直接行うため、ここでは不要
 
     def _update_action_selection(self):
         for i, button in enumerate(self.action_buttons):
@@ -301,23 +311,27 @@ class BattleScene(BaseScene):
     def _handle_action_selection(self, event):
         """メインの行動選択時のイベント処理"""
         if event.type == pygame.KEYDOWN:
+            current_index = self.selected_action_index
+            
             if event.key == pygame.K_DOWN:
-                self.selected_action_index = (self.selected_action_index + 2) % 4
+                # 下キー: インデックスを2増やす（0→2, 1→3）
+                if current_index < 2:
+                    self.selected_action_index += 2
             elif event.key == pygame.K_UP:
-                self.selected_action_index = (self.selected_action_index - 2) % 4
+                # 上キー: インデックスを2減らす（2→0, 3→1）
+                if current_index >= 2:
+                    self.selected_action_index -= 2
             elif event.key == pygame.K_LEFT:
-                if self.selected_action_index % 2 == 1: 
+                # 左キー: インデックスを1減らす（1→0, 3→2）
+                if current_index % 2 == 1:
                     self.selected_action_index -= 1
             elif event.key == pygame.K_RIGHT:
-                if self.selected_action_index % 2 == 0: 
+                # 右キー: インデックスを1増やす（0→1, 2→3）
+                if current_index % 2 == 0:
                     self.selected_action_index += 1
-            self._update_action_selection()
 
             if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_z]:
-                button = self.action_buttons[self.selected_action_index]
-                if not button.is_enabled: 
-                    return None
-
+                # 決定キーのロジックはほぼ同じ
                 if self.selected_action_index == 0:  # たたかう
                     self.battle_state = "choosing_move"
                 elif self.selected_action_index == 1:  # バッグ
@@ -327,9 +341,11 @@ class BattleScene(BaseScene):
                     self.battle_state = "switching"
                     self._setup_party_buttons()
                 elif self.selected_action_index == 3:  # にげる
-                    self.message_box.add_message("うまく にげきれた！")
-                    self.battle_result = "escaped"
-                    self._reset_all_stat_stages()
+                    if self.battle.execute_run_turn(): # 逃走処理を呼び出す
+                        self.battle_result = "escaped"
+                    # 逃走の成否メッセージをbattleクラスから受け取る
+                    for msg in self.battle.message_log:
+                        self.message_box.add_message(msg)
                     self.battle_state = "message_display"
         return None
     
@@ -555,12 +571,44 @@ class BattleScene(BaseScene):
             self.message_box.draw(self.screen)
 
     def _draw_action_selection(self):
-        # 画像ベースのメッセージボックスを描画
+        # 左側のメッセージボックスはそのまま描画
         self.action_message_box.draw(self.screen)
+
+        # --- 右側の選択パネルの描画処理 ---
+        panel_x, panel_y = 450, 420
+        panel_width, panel_height = 290, 150
         
-        # アクションボタンを描画
-        for button in self.action_buttons:
-            button.draw(self.screen)
+        if self.action_panel_image:
+            self.screen.blit(self.action_panel_image, (panel_x, panel_y))
+        else:
+            # 画像がない場合の代替描画
+            pygame.draw.rect(self.screen, self.WHITE, (panel_x, panel_y, panel_width, panel_height))
+            pygame.draw.rect(self.screen, self.BLACK, (panel_x, panel_y, panel_width, panel_height), 3)
+
+        # --- テキストとカーソルの座標計算を修正 ---
+        # パネル内の余白やテキスト間の距離を定義
+        margin_x = 100  # 左右の余白
+        margin_y = 45  # 上下の余白
+        spacing_x = 150 # テキスト間の横の距離
+        spacing_y = 60  # テキスト間の縦の距離
+
+        for i, text in enumerate(self.action_texts):
+            # 2x2グリッドの座標を計算
+            col = i % 2  # 列 (0 or 1)
+            row = i // 2 # 行 (0 or 1)
+            
+            text_x = panel_x + margin_x + (col * spacing_x)
+            text_y = panel_y + margin_y + (row * spacing_y)
+
+             # 選択されている項目にカーソル画像を描画
+            if i == self.selected_action_index:
+                cursor_x = text_x - 65
+                
+                # text_y を基準にカーソルの中心を合わせる
+                cursor_rect = self.cursor_image.get_rect(center=(cursor_x, text_y + 5))
+                self.screen.blit(self.cursor_image, cursor_rect)
+            
+            self.draw_text(text, text_x, text_y, self.BLACK, center=True)
 
     def _draw_move_selection(self):
         for button in self.move_buttons:

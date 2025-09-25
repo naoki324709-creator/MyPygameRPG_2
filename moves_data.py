@@ -2,8 +2,8 @@
 
 # 技のデータを辞書形式で定義
 MOVE_DATABASE = {
-    "taiatari": {
-        "id": "taiatari",
+    "tackle": {
+        "id": "tackle",
         "name": "たいあたり",
         "power": 30,
         "accuracy": 1.0, 
@@ -11,8 +11,8 @@ MOVE_DATABASE = {
         "type": "normal",
         "effect": None
     },
-    "turunomuti": {
-        "id": "turunomuti",
+    "vine_whip": {
+        "id": "vine_whip",
         "name": "つるのムチ",
         "power": 45,
         "accuracy": 1.0, 
@@ -20,8 +20,8 @@ MOVE_DATABASE = {
         "type": "grass",
         "effect": None
     },
-    "hinoko": {
-        "id": "hinoko",
+    "ember": {
+        "id": "ember",
         "name": "ひのこ",
         "power": 1,
         "accuracy": 1.0, 
