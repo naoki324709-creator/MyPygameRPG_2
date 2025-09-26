@@ -18,7 +18,7 @@ class GameManager:
         
         # フォント読み込み
         try:
-            self.font = pygame.font.Font("pkmn_w.ttf", 28)
+            self.font = pygame.font.Font("pkmn_w.ttf", 40)
         except:
             print("[WARNING] pkmn_w.ttf が見つからないため、デフォルトフォントを使用します")
             self.font = pygame.font.Font(None, 28)
@@ -115,6 +115,12 @@ class GameManager:
             self.running = False
 
     def _serialize_monster(self, monster):
+        moves_to_save = []
+        for move in monster.moves:
+            moves_to_save.append({
+                "id": move.get('id', move['name']),
+                "current_pp": move.get('current_pp', 0)
+            })
         """モンスターオブジェクトを辞書形式にシリアライズ"""
         return {
             "id": monster.base_stats['id'],
@@ -154,16 +160,27 @@ class GameManager:
         }
         
         # 技を復元
+        # 技とPPを復元
         monster.moves = []
-        for move_id in monster_data.get("move_ids", []):
-            if move_id in MOVE_DATABASE:
-                monster.moves.append(MOVE_DATABASE[move_id])
-            else:
-                # 技名で検索（後方互換性のため）
-                for move_data in MOVE_DATABASE.values():
-                    if move_data['name'] == move_id:
-                        monster.moves.append(move_data)
-                        break
+        
+        # 新しいセーブ形式 ("moves" キー) の場合
+        if "moves" in monster_data:
+            for move_info in monster_data["moves"]:
+                move_id = move_info.get("id")
+                if move_id in MOVE_DATABASE:
+                    move_instance = MOVE_DATABASE[move_id].copy()
+                    # 保存された current_pp で上書き
+                    move_instance['current_pp'] = move_info.get('current_pp', move_instance.get('pp', 0))
+                    monster.moves.append(move_instance)
+        
+        # 古いセーブ形式 ("move_ids" キー) への後方互換性
+        elif "move_ids" in monster_data:
+            for move_id in monster_data["move_ids"]:
+                if move_id in MOVE_DATABASE:
+                    move_instance = MOVE_DATABASE[move_id].copy()
+                    # PPは最大値で復元
+                    move_instance['current_pp'] = move_instance.get('pp', 0)
+                    monster.moves.append(move_instance)
         
         return monster
 

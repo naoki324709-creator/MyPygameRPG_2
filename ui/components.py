@@ -13,7 +13,7 @@ class Button:
         
         # 色設定
         self.bg_color = (255, 255, 255)
-        self.text_color = (0, 0, 0)
+        self.text_color = (60, 60, 60)
         self.border_color = (0, 0, 0)
         self.selected_color = (255, 255, 0)
         self.disabled_color = (128, 128, 128)
@@ -76,7 +76,7 @@ class MessageBox:
         self.font = font
         self.bg_color = (255, 255, 255)
         self.border_color = (0, 0, 0)
-        self.text_color = (0, 0, 0)
+        self.text_color = (60, 60, 60)
         
         self.message_queue = []       # 表示待ちのメッセージリスト
         self.current_message = ""     # 現在表示中のメッセージ
@@ -294,7 +294,7 @@ class ImageMessageBox:
         
         for word in words:
             test_line = current_line + (" " if current_line else "") + word
-            text_surface = self.font.render(test_line, True, (0, 0, 0))
+            text_surface = self.font.render(test_line, True, (60, 60, 60))
             
             if text_surface.get_width() <= max_width:
                 current_line = test_line
@@ -310,7 +310,7 @@ class ImageMessageBox:
         
         # 各行を描画
         for i, line in enumerate(lines[:self.max_lines]):
-            line_surface = self.font.render(line, True, (0, 0, 0))
+            line_surface = self.font.render(line, True, (60, 60, 60))
             screen.blit(line_surface, (x, y + i * self.line_height))
     
     def _draw_input_indicator(self, screen):
@@ -327,7 +327,7 @@ class ImageMessageBox:
                 (indicator_x + 15, indicator_y),
                 (indicator_x + 7, indicator_y + 10)
             ]
-            pygame.draw.polygon(screen, (0, 0, 0), points)
+            pygame.draw.polygon(screen, (60, 60, 60), points)
 
 class PokemonInfoPanel:
     """ポケモン情報パネル"""
@@ -343,18 +343,18 @@ class PokemonInfoPanel:
             
         # 背景
         pygame.draw.rect(screen, (240, 240, 240), self.rect)
-        pygame.draw.rect(screen, (0, 0, 0), self.rect, 2)
+        pygame.draw.rect(screen, (60, 60, 60), self.rect, 2)
         
         # 名前
-        name_text = self.font.render(pokemon.name, True, (0, 0, 0))
+        name_text = self.font.render(pokemon.name, True, (60, 60, 60))
         screen.blit(name_text, (self.rect.x + 10, self.rect.y + 10))
         
         # レベル
-        level_text = self.font.render(f"Lv.{pokemon.level}", True, (0, 0, 0))
+        level_text = self.font.render(f"Lv.{pokemon.level}", True, (60, 60, 60))
         screen.blit(level_text, (self.rect.x + 10, self.rect.y + 40))
         
         # HP数値
-        hp_text = self.font.render(f"HP: {pokemon.current_hp}/{pokemon.max_hp}", True, (0, 0, 0))
+        hp_text = self.font.render(f"HP: {pokemon.current_hp}/{pokemon.max_hp}", True, (60, 60, 60))
         screen.blit(hp_text, (self.rect.x + 10, self.rect.y + 70))
         
         # HPバー

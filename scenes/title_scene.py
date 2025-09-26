@@ -89,4 +89,4 @@ class TitleScene(BaseScene):
             button.draw(self.screen)
         
         # 操作説明
-        self.draw_text("↑↓: 選択  Enter/Space: 決定", 400, 550, self.WHITE, center=True)
+        #self.draw_text("↑↓: 選択  Enter/Space: 決定", 400, 550, self.WHITE, center=True)

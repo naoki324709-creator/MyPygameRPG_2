@@ -4,11 +4,12 @@
 MOVE_DATABASE = {
     "tackle": {
         "id": "tackle",
-        "name": "たいあたり",
+        "name": "すいりゅうれんだ",
         "power": 30,
         "accuracy": 1.0, 
         "category": "physical",
-        "type": "normal",
+        "type": "fairy",
+        "pp": 1, 
         "effect": None
     },
     "vine_whip": {
@@ -18,6 +19,7 @@ MOVE_DATABASE = {
         "accuracy": 1.0, 
         "category": "physical",
         "type": "grass",
+        "pp": 25, 
         "effect": None
     },
     "ember": {
@@ -27,6 +29,7 @@ MOVE_DATABASE = {
         "accuracy": 1.0, 
         "category": "special",
         "type": "fire",
+        "pp": 25, 
         "effect": {"type": "burn", "chance": 1}
     },
     "awa": {
@@ -36,6 +39,7 @@ MOVE_DATABASE = {
         "accuracy": 1.0, 
         "category": "special",
         "type": "water",
+        "pp": 25, 
         "effect": None
     },
     "poison_sting": {
@@ -45,6 +49,7 @@ MOVE_DATABASE = {
         "accuracy": 1.0, 
         "category": "physical",
         "type": "poison",
+        "pp": 25, 
         "effect": {"type": "poison", "chance": 0.3}
     },
     "thunder_wave": {
@@ -54,6 +59,7 @@ MOVE_DATABASE = {
         "accuracy": 0.7, 
         "category": "status",
         "type": "electric",
+        "pp": 25, 
         "effect": {"type": "paralysis", "chance": 1.0}
     },
     "toxic": {
@@ -63,6 +69,7 @@ MOVE_DATABASE = {
         "accuracy": 0.9,
         "category": "status",
         "type": "poison",
+        "pp": 25, 
         "effect": {"type": "toxic", "chance": 1.0}
     },
     "sing": {
@@ -72,6 +79,7 @@ MOVE_DATABASE = {
         "accuracy": 0.55,
         "category": "status",
         "type": "normal",
+        "pp": 25, 
         "effect": {"type": "sleep", "chance": 1.0}
     },
     "swords_dance": {
@@ -81,6 +89,7 @@ MOVE_DATABASE = {
         "accuracy": 1.0,
         "category": "status",
         "type": "normal",
+        "pp": 20, 
         "effect": {
             "type": "stat_change",
             "stat": "attack",
@@ -90,11 +99,12 @@ MOVE_DATABASE = {
     },
     "ice_beam": {
         "id": "ice_beam",
-        "name": "れいとうビーム",
+        "name": "あんこくきょうだ",
         "power": 90,
         "accuracy": 1.0,
         "category": "special",
         "type": "ice",
+        "pp": 10,
         "effect": {"type": "freeze", "chance": 1}
     }
 }

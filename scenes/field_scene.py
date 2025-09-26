@@ -2,7 +2,7 @@
 import pygame
 import random
 from scenes.base_scene import BaseScene
-from ui.components import MessageBox
+from ui.components import ImageMessageBox
 
 class FieldScene(BaseScene):
     """フィールド（マップ移動）シーンクラス"""
@@ -35,7 +35,7 @@ class FieldScene(BaseScene):
         self.steps_since_last_encounter = 0
         
         # UI
-        self.message_box = MessageBox(50, 450, 700, 100, font)
+        self.message_box = ImageMessageBox(0, 450, 800, 150, font, "ui/textbox.png")
         self.show_message = False
         
         # NPCや建物の位置（例）

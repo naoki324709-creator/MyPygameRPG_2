@@ -3,12 +3,12 @@
 # モンスターの「種族値」データを定義
 MONSTER_DATABASE = {
     "bulbasaur": {
-        "name": "フシギダネ",
+        "name": "フシギダネネ",
         "types": ["grass", "poison"],
         "growth_rate": "medium_slow",
         "base_exp_yield": 64,
         "learnset": { # ← 追加ブロック
-            7: "turunomuti",
+            7: "vine_whip",
             10: "poison_sting"
         },
         "base_hp": 45,
@@ -17,7 +17,7 @@ MONSTER_DATABASE = {
         "base_sp_attack": 650,
         "base_sp_defense": 65,
         "base_speed": 400,
-        "moves": ["tackle", "ice_beam", "hinoko", "swords_dance"]
+        "moves": ["tackle", "ice_beam", "ember", "swords_dance"]
     },
     "charmander": {
         "name": "ヒトカゲ",
@@ -25,7 +25,7 @@ MONSTER_DATABASE = {
         "growth_rate": "medium_slow",
         "base_exp_yield": 65,
         "learnset": { # ← 追加ブロック
-            8: "hinoko"
+            8: "ember"
         },
         "base_hp": 39,
         "base_attack": 52,

@@ -14,11 +14,12 @@ class BaseScene(ABC):
         
         # 共通色定義
         self.WHITE = (255, 255, 255)
-        self.BLACK = (0, 0, 0)
+        #self.BLACK = (0, 0, 0)
+        self.BLACK = (60, 60, 60)
         self.GREEN = (0, 255, 0)
         self.BLUE = (0, 0, 255)
         self.RED = (255, 0, 0)
-        self.DARK_GRAY = (60, 60, 60)
+        #self.DARK_GRAY = (60, 60, 60)
         self.LIGHT_GRAY = (200, 200, 200)
         self.HIGHLIGHT_COLOR = (255, 255, 0)
         self.BACKGROUND_GREEN = (96, 176, 80)

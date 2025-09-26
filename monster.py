@@ -156,7 +156,10 @@ def create_monster(monster_id, level):
         for move_id in data["moves"]:
             move_data = MOVE_DATABASE.get(move_id)
             if move_data:
-                monster_moves.append(move_data)
+                # move_dataをコピーし、現在のPPを追加
+                move_instance = move_data.copy()
+                move_instance['current_pp'] = move_data.get('pp', 0)
+                monster_moves.append(move_instance)
         
         base_stats = {
             "id": monster_id,

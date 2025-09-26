@@ -147,17 +147,17 @@ class Battle:
                 elif effect_type == "toxic": target.toxic_counter = 1
                 
                 status_name = STATUS_NAME_MAP.get(effect_type, effect_type)
-                self._log_message(f"{target.name} は {status_name} 状態になった！")
+                self._log_message(f"{target.name} は {status_name} じょうたいになった！")
             else:
                 # すでに別の状態異常だった場合のメッセージ
                 existing_status_name = STATUS_NAME_MAP.get(target.status_condition)
-                self._log_message(f"{target.name} は すでに {existing_status_name} 状態なので、効果がなかった！")
+                self._log_message(f"{target.name} は すでに {existing_status_name} じょうたいなので、こうかがなかった！")
 
     def _handle_end_of_turn_status(self, monster):
         """ターン終了時に発生する状態異常ダメージなどを処理する。"""
         if monster.status_condition == "poison":
             damage = monster.max_hp // 8
-            self._log_message(f"{monster.name} は どくのダメージを受けている！")
+            self._log_message(f"{monster.name} は どくのダメージをうけている！")
             monster.take_damage(damage)
         elif monster.status_condition == "toxic":
             damage = (monster.max_hp // 16) * monster.toxic_counter
@@ -166,7 +166,7 @@ class Battle:
             monster.toxic_counter += 1
         elif monster.status_condition == "burn":
             damage = monster.max_hp // 16
-            self._log_message(f"{monster.name} は やけどのダメージを受けている！")
+            self._log_message(f"{monster.name} は やけどのダメージをうけている！")
             monster.take_damage(damage)
 
     def _handle_status_move(self, user, target, move):
@@ -201,7 +201,7 @@ class Battle:
         # 交代して出てきたポケモンの能力ランクはリセットされる
         for stat in self.player_monster.stat_stages:
             self.player_monster.stat_stages[stat] = 0
-        return f"\nゆけっ！ {self.player_monster.name}！"
+        return f"ゆけっ！ {self.player_monster.name}！"
     
     def _award_exp(self):
         """戦闘に参加したプレイヤーのポケモンに経験値を与える。"""
@@ -289,7 +289,7 @@ class Battle:
                 # UIに表示するためのメッセージをログに追加
                 # 誰がダメージを受けたか分かりやすくする
                 defender_name = f"あいての {defender.name}" if defender == self.enemy_monster else defender.name
-                self._log_message(f"{defender_name} は {damage} のダメージを受けた！")
+                self._log_message(f"{defender_name} は {damage} のダメージをうけた！")
                 
                 # 相手が倒れていなければ、追加効果の処理を行う
                 if not defender.is_fainted():
@@ -358,7 +358,7 @@ class Battle:
             self.message_log.append(f"あいての {self.enemy_monster.name} の {enemy_move['name']}！")
             damage = self._calculate_damage(self.enemy_monster, self.player_monster, enemy_move)
             self.player_monster.take_damage(damage)
-            self.message_log.append(f"{self.player_monster.name} は {damage} のダメージを受けた！")
+            self.message_log.append(f"{self.player_monster.name} は {damage} のダメージをうけた！")
             self._apply_status_effect(self.player_monster, enemy_move)
             return False
 
