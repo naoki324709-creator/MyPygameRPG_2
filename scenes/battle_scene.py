@@ -612,10 +612,18 @@ class BattleScene(BaseScene):
                     self.battle_result = "battle_victory"
                     self.message_box.add_message(f"{self.battle.enemy_monster.name} を たおした！")
                     
-                    # 経験値処理
+                    hp_before_exp = self.battle.player_monster.max_hp
+
+                    # 経験値処理を呼び出す
                     messages, new_move = self.battle._award_exp()
                     for msg in messages: 
                         self.message_box.add_message(msg)
+
+                    # 経験値処理の「後」でHPバーをチェック
+                    # もし最大HPが増えていたら、レベルアップしたと判断できる
+                    if self.battle.player_monster.max_hp > hp_before_exp:
+                        # HPバーを瞬時に更新する
+                        self.player_hp_bar.set_hp_instant(self.battle.player_monster)
                     
                     if new_move:
                         self.monster_learning = self.battle.player_monster

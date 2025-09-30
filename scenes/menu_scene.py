@@ -224,5 +224,15 @@ class MenuScene(BaseScene):
         # 選択されたポケモンの詳細情報
         if self.pokemon_buttons and 0 <= self.selected_pokemon_index < len(self.pokemon_buttons):
             selected_pokemon = self.pokemon_buttons[self.selected_pokemon_index].pokemon
-            detail_panel = PokemonInfoPanel(50, 400, 700, 120, self.font)
+            
+            # PokemonInfoPanelの呼び出し方を新しい仕様に合わせる
+            panel_x, panel_y = 50, 400
+            detail_panel = PokemonInfoPanel(
+                position=(panel_x, panel_y),
+                size=(700, 120),
+                font=self.font,
+                background_image_path="ui/assets/panel_player.png", # 背景画像を仮指定
+                name_pos=(panel_x + 20, panel_y + 10),              # 名前の位置を仮指定
+                name_color=(255, 255, 255)                          # 名前の色を仮指定（白）
+            )
             detail_panel.draw(self.screen, selected_pokemon)

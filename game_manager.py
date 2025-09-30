@@ -47,7 +47,7 @@ class GameManager:
     
     def _initialize_player_data(self):
         """プレイヤーの初期データを設定"""
-        self.player_party.add_monster(create_monster("bulbasaur", level=100))
+        self.player_party.add_monster(create_monster("bulbasaur", level=5))
         self.player_party.add_monster(create_monster("squirtle", level=5))
         self.player_party.add_monster(create_monster("pidgey", level=5))
 
