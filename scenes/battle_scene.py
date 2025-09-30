@@ -51,8 +51,27 @@ class BattleScene(BaseScene):
         # アクション選択時専用の画像メッセージボックス
         self.action_message_box = ImageMessageBox(0, 470, 480, 130, font, "ui/textbox.png")
         
-        self.player_info = PokemonInfoPanel(450, 300, 300, 120, font)
-        self.enemy_info = PokemonInfoPanel(50, 50, 300, 120, font)
+        # self.player_info = PokemonInfoPanel(450, 300, 300, 120, font)
+        # self.enemy_info = PokemonInfoPanel(50, 50, 300, 120, font)
+
+        # パネルのサイズと位置を定義（調整しやすいように定数化）
+        PLAYER_PANEL_WIDTH = 400
+        PLAYER_PANEL_HEIGHT = 400  
+        PLAYER_PANEL_POS = (442, 180)#左右、上下
+
+        ENEMY_PANEL_WIDTH = 400
+        ENEMY_PANEL_HEIGHT = 400 
+        ENEMY_PANEL_POS = (-43, -100)
+
+        # プレイヤーの情報パネル画像を読み込み
+        self.player_panel_img = pygame.image.load("ui/assets/panel_player.png").convert_alpha()
+        self.player_panel_img = pygame.transform.scale(self.player_panel_img, (PLAYER_PANEL_WIDTH, PLAYER_PANEL_HEIGHT))
+        self.player_panel_rect = self.player_panel_img.get_rect(topleft=PLAYER_PANEL_POS)
+        
+        # 敵の情報パネル画像を読み込み
+        self.enemy_panel_img = pygame.image.load("ui/assets/panel_enemy.png").convert_alpha()
+        self.enemy_panel_img = pygame.transform.scale(self.enemy_panel_img, (ENEMY_PANEL_WIDTH, ENEMY_PANEL_HEIGHT))
+        self.enemy_panel_rect = self.enemy_panel_img.get_rect(topleft=ENEMY_PANEL_POS)
         
         self.action_buttons = []
         self.move_buttons = []
@@ -569,8 +588,10 @@ class BattleScene(BaseScene):
         self.screen.fill(self.BACKGROUND_GREEN)
         
         # ポケモン情報パネル
-        self.player_info.draw(self.screen, self.battle.player_monster)
-        self.enemy_info.draw(self.screen, self.enemy_monster)
+        # self.player_info.draw(self.screen, self.battle.player_monster)
+        # self.enemy_info.draw(self.screen, self.enemy_monster)
+        self.screen.blit(self.player_panel_img, self.player_panel_rect)
+        self.screen.blit(self.enemy_panel_img, self.enemy_panel_rect)
         
         # ポケモンスプライトを描画
         self.player_sprite.draw(self.screen, 160, 350, scale=3.0)  # プレイヤー側（背面・左下）
