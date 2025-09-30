@@ -1,7 +1,7 @@
 # scenes/battle_scene.py - 完全版
 import pygame
 from scenes.base_scene import BaseScene
-from ui.components import Button, HPBar, ImageMessageBox, PokemonInfoPanel
+from ui.components import Button, HPBar, ImageMessageBox, PokemonInfoPanel, NumberDisplay
 from battle import Battle
 
 # スプライトシステムの読み込み
@@ -54,14 +54,24 @@ class BattleScene(BaseScene):
         # self.player_info = PokemonInfoPanel(450, 300, 300, 120, font)
         # self.enemy_info = PokemonInfoPanel(50, 50, 300, 120, font)
 
+        # ポケモン名の表示位置をここで定義
+        PLAYER_NAME_POS = (495, 335) # (X座標, Y座標)
+        PLAYER_NAME_COLOR = (60, 60, 60)
+        ENEMY_NAME_POS = (10, 65)   # (X座標, Y座標)
+        ENEMY_NAME_COLOR = (60, 60, 60)
+
         # 情報パネルの初期化
         self.player_info = PokemonInfoPanel(
             position=(442, 180), size=(400, 400), font=font,
-            background_image_path="ui/assets/panel_player.png"
+            background_image_path="ui/assets/panel_player.png",
+            name_pos=PLAYER_NAME_POS,
+            name_color=PLAYER_NAME_COLOR
         )
         self.enemy_info = PokemonInfoPanel(
             position=(-43, -100), size=(400, 400), font=font,
-            background_image_path="ui/assets/panel_enemy.png"
+            background_image_path="ui/assets/panel_enemy.png",
+            name_pos=ENEMY_NAME_POS,
+            name_color=ENEMY_NAME_COLOR
         )
         # # パネルのサイズと位置を定義（調整しやすいように定数化）
         # PLAYER_PANEL_WIDTH = 400
@@ -99,6 +109,27 @@ class BattleScene(BaseScene):
         self.enemy_hp_bar = HPBar(
             x=139, y=-76, width=ENEMY_HP_BAR_WIDTH, height=ENEMY_HP_BAR_HEIGHT,
             change_speed=HP_CHANGE_SPEED
+        )
+
+        # レベル数字のパラメータを定義
+        LEVEL_DIGIT_WIDTH = 400
+        LEVEL_DIGIT_HEIGHT = 400
+        LEVEL_DIGIT_SPACING = -378
+
+        # プレイヤーのレベル表示を初期化
+        self.player_level_display = NumberDisplay(
+            x=534, y=169,
+            digit_width=LEVEL_DIGIT_WIDTH,
+            digit_height=LEVEL_DIGIT_HEIGHT,
+            spacing=LEVEL_DIGIT_SPACING
+        )
+
+        # 敵のレベル表示を初期化
+        self.enemy_level_display = NumberDisplay(
+            x=40, y=-100,
+            digit_width=LEVEL_DIGIT_WIDTH,
+            digit_height=LEVEL_DIGIT_HEIGHT,
+            spacing=LEVEL_DIGIT_SPACING
         )
 
         # 初期ポケモンをHPバーに設定
@@ -632,6 +663,10 @@ class BattleScene(BaseScene):
         # HPバーの描画
         self.player_hp_bar.draw(self.screen)
         self.enemy_hp_bar.draw(self.screen)
+
+        # レベルの数字を描画
+        self.player_level_display.draw(self.screen, self.battle.player_monster.level)
+        self.enemy_level_display.draw(self.screen, self.battle.enemy_monster.level)
         
         # ポケモンスプライトを描画
         self.player_sprite.draw(self.screen, 160, 350, scale=3.0)  # プレイヤー側（背面・左下）

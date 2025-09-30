@@ -372,28 +372,58 @@ class ImageMessageBox:
             ]
             pygame.draw.polygon(screen, (60, 60, 60), points)
 
+class NumberDisplay:
+    """数字を画像の組み合わせで描画するクラス"""
+    def __init__(self, x, y, digit_width, digit_height, spacing=0):
+        self.x = x
+        self.y = y
+        self.digit_width = digit_width
+        self.digit_height = digit_height
+        self.spacing = spacing  # 数字と数字の間のスペース
+        self.digit_images = {}
+        
+        # 0から9までの数字画像を読み込む
+        for i in range(10):
+            try:
+                path = f"ui/assets/num_{i}.png"
+                image = pygame.image.load(path).convert_alpha()
+                self.digit_images[str(i)] = pygame.transform.scale(image, (digit_width, digit_height))
+            except pygame.error:
+                print(f"警告: 数字画像が見つかりません: {path}")
+
+    def draw(self, screen, number):
+        """指定された数値を画面に描画する"""
+        number_str = str(number)
+
+        current_x = self.x
+        for digit_char in number_str:
+            if digit_char in self.digit_images:
+                screen.blit(self.digit_images[digit_char], (current_x, self.y))
+            # 次の数字の描画位置を計算
+            current_x += self.digit_width + self.spacing
+
 class PokemonInfoPanel:
     """ポケモン情報パネル"""
-    def __init__(self, position, size, font, background_image_path):
+    def __init__(self, position, size, font, background_image_path, name_pos, name_color):
         self.rect = pygame.Rect(position, size)
         self.font = font
+        self.name_pos = name_pos
+        self.name_color = name_color
         
-        # 背景画像を読み込み、リサイズ
         self.background_image = pygame.image.load(background_image_path).convert_alpha()
         self.background_image = pygame.transform.scale(self.background_image, size)
 
+        # --- レベル表示に関する記述をすべて削除 ---
+
     def draw(self, screen, pokemon):
-        """パネルとポケモンの基本情報を描画"""
+        """パネルとポケモンの名前を描画"""
         # 背景
         screen.blit(self.background_image, self.rect.topleft)
         
-        # ポケモン名とレベルを描画（座標は適宜調整してください）
-        name_surface = self.font.render(pokemon.name, True, (0, 0, 0))
-        level_surface = self.font.render(f"Lv{pokemon.level}", True, (0, 0, 0))
-        
-        # この座標はパネル画像のデザインに合わせて調整が必要です
-        screen.blit(name_surface, (self.rect.x + 20, self.rect.y + 10))
-        screen.blit(level_surface, (self.rect.x + 200, self.rect.y + 10))
+        # ポケモン名
+        # 受け取った座標を使って名前を描画
+        name_surface = self.font.render(pokemon.name, True, self.name_color)
+        screen.blit(name_surface, self.name_pos)
 
 # デフォルト画像作成用の関数
 def create_default_textbox_image():
