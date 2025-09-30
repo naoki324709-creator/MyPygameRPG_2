@@ -42,32 +42,75 @@ class Button:
 
 class HPBar:
     """HPバークラス"""
-    def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.bg_color = (0, 0, 0)
-        self.hp_color = (0, 255, 0)
-        self.border_color = (0, 0, 0)
-    
-    def draw(self, screen, current_hp, max_hp):
-        """HPバーを描画"""
-        # 背景
-        pygame.draw.rect(screen, self.bg_color, self.rect)
+    def __init__(self, x, y, width, height, change_speed=100):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.change_speed = change_speed  # HPが1秒間に変化する量
+
+        # HPバーの画像を読み込み、指定されたサイズにリサイズ
+        self.bar_images = {
+            "green": pygame.transform.scale(pygame.image.load("ui/assets/hp_bar_green.png").convert_alpha(), (width, height)),
+            "yellow": pygame.transform.scale(pygame.image.load("ui/assets/hp_bar_yellow.png").convert_alpha(), (width, height)),
+            "red": pygame.transform.scale(pygame.image.load("ui/assets/hp_bar_red.png").convert_alpha(), (width, height)),
+        }
         
-        # HP部分
-        if max_hp > 0:
-            hp_ratio = current_hp / max_hp
-            hp_width = (self.rect.width - 4) * hp_ratio
-            hp_rect = pygame.Rect(self.rect.x + 2, self.rect.y + 2, hp_width, self.rect.height - 4)
-            
-            # HPが少ないときは色を変える
-            if hp_ratio > 0.5:
-                color = (0, 255, 0)  # 緑
-            elif hp_ratio > 0.2:
-                color = (255, 255, 0)  # 黄
+        self.max_hp = 1
+        self.current_hp = 1
+        self.displayed_hp = 1  # 画面に表示されているHP（アニメーション用）
+
+    def set_initial_pokemon(self, pokemon):
+        """対象のポケモンをセットし、HPを初期化する"""
+        self.max_hp = pokemon.max_hp
+        self.current_hp = pokemon.current_hp
+        self.displayed_hp = pokemon.current_hp
+
+    def set_hp_instant(self, pokemon):
+        """HPバーの状態をアニメーションなしで瞬時に更新する"""
+        self.max_hp = pokemon.max_hp
+        self.current_hp = pokemon.current_hp
+        self.displayed_hp = pokemon.current_hp # 表示HPも直接更新
+
+    def update(self, dt, current_hp, max_hp):
+        """HPバーのアニメーションを更新する"""
+        self.current_hp = current_hp
+        self.max_hp = max_hp
+        
+        # 表示HPを実際のHPに近づける
+        hp_diff = self.current_hp - self.displayed_hp
+        if abs(hp_diff) > 0.1: # わずかな差ならアニメーションしない
+            change = self.change_speed * dt
+            if hp_diff < 0:
+                self.displayed_hp -= change
+                if self.displayed_hp < self.current_hp:
+                    self.displayed_hp = self.current_hp
             else:
-                color = (255, 0, 0)  # 赤
-                
-            pygame.draw.rect(screen, color, hp_rect)
+                self.displayed_hp += change
+                if self.displayed_hp > self.current_hp:
+                    self.displayed_hp = self.current_hp
+
+    def draw(self, screen):
+        """HPバーを描画する"""
+        if self.max_hp <= 0: return
+
+        hp_ratio = self.displayed_hp / self.max_hp
+        
+        # HPの割合に応じてバーの色を選択
+        if hp_ratio > 0.5:
+            bar_image = self.bar_images["green"]
+        elif hp_ratio > 0.2:
+            bar_image = self.bar_images["yellow"]
+        else:
+            bar_image = self.bar_images["red"]
+            
+        # 表示HPの割合に合わせてバーの幅を計算
+        current_width = int(self.width * hp_ratio)
+        if current_width <= 0: return # 幅が0以下なら描画しない
+        
+        # 計算した幅のサブサーフェス（画像の一部）を切り出して描画
+        bar_subsurface = bar_image.subsurface((0, 0, current_width, self.height))
+        screen.blit(bar_subsurface, (self.x, self.y))
 
 class MessageBox:
     """文字を順に表示する機能を持つメッセージボックスクラス（従来版）"""
@@ -331,44 +374,26 @@ class ImageMessageBox:
 
 class PokemonInfoPanel:
     """ポケモン情報パネル"""
-    def __init__(self, x, y, width, height, font):
-        self.rect = pygame.Rect(x, y, width, height)
+    def __init__(self, position, size, font, background_image_path):
+        self.rect = pygame.Rect(position, size)
         self.font = font
-        self.hp_bar = HPBar(x + 10, y + height - 30, width - 20, 20)
         
+        # 背景画像を読み込み、リサイズ
+        self.background_image = pygame.image.load(background_image_path).convert_alpha()
+        self.background_image = pygame.transform.scale(self.background_image, size)
+
     def draw(self, screen, pokemon):
-        """ポケモン情報を描画"""
-        if not pokemon:
-            return
-            
+        """パネルとポケモンの基本情報を描画"""
         # 背景
-        pygame.draw.rect(screen, (240, 240, 240), self.rect)
-        pygame.draw.rect(screen, (60, 60, 60), self.rect, 2)
+        screen.blit(self.background_image, self.rect.topleft)
         
-        # 名前
-        name_text = self.font.render(pokemon.name, True, (60, 60, 60))
-        screen.blit(name_text, (self.rect.x + 10, self.rect.y + 10))
+        # ポケモン名とレベルを描画（座標は適宜調整してください）
+        name_surface = self.font.render(pokemon.name, True, (0, 0, 0))
+        level_surface = self.font.render(f"Lv{pokemon.level}", True, (0, 0, 0))
         
-        # レベル
-        level_text = self.font.render(f"Lv.{pokemon.level}", True, (60, 60, 60))
-        screen.blit(level_text, (self.rect.x + 10, self.rect.y + 40))
-        
-        # HP数値
-        hp_text = self.font.render(f"HP: {pokemon.current_hp}/{pokemon.max_hp}", True, (60, 60, 60))
-        screen.blit(hp_text, (self.rect.x + 10, self.rect.y + 70))
-        
-        # HPバー
-        self.hp_bar.draw(screen, pokemon.current_hp, pokemon.max_hp)
-        
-        # 状態異常
-        if pokemon.status_condition:
-            status_map = {
-                "poison": "どく", "paralysis": "まひ", "toxic": "もうどく",
-                "burn": "やけど", "sleep": "ねむり", "freeze": "こおり"
-            }
-            status_text = status_map.get(pokemon.status_condition, pokemon.status_condition)
-            status_surface = self.font.render(status_text, True, (255, 0, 0))
-            screen.blit(status_surface, (self.rect.x + 200, self.rect.y + 10))
+        # この座標はパネル画像のデザインに合わせて調整が必要です
+        screen.blit(name_surface, (self.rect.x + 20, self.rect.y + 10))
+        screen.blit(level_surface, (self.rect.x + 200, self.rect.y + 10))
 
 # デフォルト画像作成用の関数
 def create_default_textbox_image():

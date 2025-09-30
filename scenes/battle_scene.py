@@ -54,24 +54,56 @@ class BattleScene(BaseScene):
         # self.player_info = PokemonInfoPanel(450, 300, 300, 120, font)
         # self.enemy_info = PokemonInfoPanel(50, 50, 300, 120, font)
 
-        # パネルのサイズと位置を定義（調整しやすいように定数化）
-        PLAYER_PANEL_WIDTH = 400
-        PLAYER_PANEL_HEIGHT = 400  
-        PLAYER_PANEL_POS = (442, 180)#左右、上下
+        # 情報パネルの初期化
+        self.player_info = PokemonInfoPanel(
+            position=(442, 180), size=(400, 400), font=font,
+            background_image_path="ui/assets/panel_player.png"
+        )
+        self.enemy_info = PokemonInfoPanel(
+            position=(-43, -100), size=(400, 400), font=font,
+            background_image_path="ui/assets/panel_enemy.png"
+        )
+        # # パネルのサイズと位置を定義（調整しやすいように定数化）
+        # PLAYER_PANEL_WIDTH = 400
+        # PLAYER_PANEL_HEIGHT = 400  
+        # PLAYER_PANEL_POS = (442, 180)#左右、上下
 
-        ENEMY_PANEL_WIDTH = 400
-        ENEMY_PANEL_HEIGHT = 400 
-        ENEMY_PANEL_POS = (-43, -100)
+        # ENEMY_PANEL_WIDTH = 400
+        # ENEMY_PANEL_HEIGHT = 400 
+        # ENEMY_PANEL_POS = (-43, -100)
 
-        # プレイヤーの情報パネル画像を読み込み
-        self.player_panel_img = pygame.image.load("ui/assets/panel_player.png").convert_alpha()
-        self.player_panel_img = pygame.transform.scale(self.player_panel_img, (PLAYER_PANEL_WIDTH, PLAYER_PANEL_HEIGHT))
-        self.player_panel_rect = self.player_panel_img.get_rect(topleft=PLAYER_PANEL_POS)
+        # # プレイヤーの情報パネル画像を読み込み
+        # self.player_panel_img = pygame.image.load("ui/assets/panel_player.png").convert_alpha()
+        # self.player_panel_img = pygame.transform.scale(self.player_panel_img, (PLAYER_PANEL_WIDTH, PLAYER_PANEL_HEIGHT))
+        # self.player_panel_rect = self.player_panel_img.get_rect(topleft=PLAYER_PANEL_POS)
         
-        # 敵の情報パネル画像を読み込み
-        self.enemy_panel_img = pygame.image.load("ui/assets/panel_enemy.png").convert_alpha()
-        self.enemy_panel_img = pygame.transform.scale(self.enemy_panel_img, (ENEMY_PANEL_WIDTH, ENEMY_PANEL_HEIGHT))
-        self.enemy_panel_rect = self.enemy_panel_img.get_rect(topleft=ENEMY_PANEL_POS)
+        # # 敵の情報パネル画像を読み込み
+        # self.enemy_panel_img = pygame.image.load("ui/assets/panel_enemy.png").convert_alpha()
+        # self.enemy_panel_img = pygame.transform.scale(self.enemy_panel_img, (ENEMY_PANEL_WIDTH, ENEMY_PANEL_HEIGHT))
+        # self.enemy_panel_rect = self.enemy_panel_img.get_rect(topleft=ENEMY_PANEL_POS)
+
+        # HPバーのパラメータを定義
+        HP_CHANGE_SPEED = 12  # 1秒間に120HP変化する
+
+        PLAYER_HP_BAR_WIDTH = 143.5
+        PLAYER_HP_BAR_HEIGHT = 400
+
+        ENEMY_HP_BAR_WIDTH = 143.5
+        ENEMY_HP_BAR_HEIGHT = 410
+
+        # HPバーの初期化
+        self.player_hp_bar = HPBar(
+            x=631, y=197, width=PLAYER_HP_BAR_WIDTH, height=PLAYER_HP_BAR_HEIGHT,
+            change_speed=HP_CHANGE_SPEED
+        )
+        self.enemy_hp_bar = HPBar(
+            x=139, y=-76, width=ENEMY_HP_BAR_WIDTH, height=ENEMY_HP_BAR_HEIGHT,
+            change_speed=HP_CHANGE_SPEED
+        )
+
+        # 初期ポケモンをHPバーに設定
+        self.player_hp_bar.set_initial_pokemon(self.battle.player_monster)
+        self.enemy_hp_bar.set_initial_pokemon(self.battle.enemy_monster)
         
         self.action_buttons = []
         self.move_buttons = []
@@ -311,6 +343,8 @@ class BattleScene(BaseScene):
         else:
             self.player_sprite = SimplePokemonSprite(player_id, "back")
         
+        self.player_hp_bar.set_hp_instant(monster)
+        
         self.battle_state = "message_display"
     
     def handle_event(self, event):
@@ -507,6 +541,8 @@ class BattleScene(BaseScene):
         return None
 
     def update(self, dt):
+        self.player_hp_bar.update(dt, self.battle.player_monster.current_hp, self.battle.player_monster.max_hp)
+        self.enemy_hp_bar.update(dt, self.battle.enemy_monster.current_hp, self.battle.enemy_monster.max_hp)
         self.message_box.update(dt)
         self.action_message_box.update(dt)  # アクションメッセージボックスの更新
 
@@ -588,10 +624,14 @@ class BattleScene(BaseScene):
         self.screen.fill(self.BACKGROUND_GREEN)
         
         # ポケモン情報パネル
-        # self.player_info.draw(self.screen, self.battle.player_monster)
-        # self.enemy_info.draw(self.screen, self.enemy_monster)
-        self.screen.blit(self.player_panel_img, self.player_panel_rect)
-        self.screen.blit(self.enemy_panel_img, self.enemy_panel_rect)
+        self.player_info.draw(self.screen, self.battle.player_monster)
+        self.enemy_info.draw(self.screen, self.enemy_monster)
+        # self.screen.blit(self.player_panel_img, self.player_panel_rect)
+        # self.screen.blit(self.enemy_panel_img, self.enemy_panel_rect)
+
+        # HPバーの描画
+        self.player_hp_bar.draw(self.screen)
+        self.enemy_hp_bar.draw(self.screen)
         
         # ポケモンスプライトを描画
         self.player_sprite.draw(self.screen, 160, 350, scale=3.0)  # プレイヤー側（背面・左下）
