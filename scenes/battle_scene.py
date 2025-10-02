@@ -188,6 +188,18 @@ class BattleScene(BaseScene):
         pygame.draw.rect(self.cursor_image, self.BLACK, (12, 8, 6, 6))  # 右端（先端）のrect
         
         self._setup_action_buttons()
+
+        try:
+            # 経験値バーの画像を読み込み
+            self.exp_bar_image = pygame.image.load("ui/assets/exp_bar.png").convert_alpha()
+        except pygame.error:
+            print("[WARNING] 経験値バーの画像 'ui/assets/exp_bar.png' が見つかりません。")
+            self.exp_bar_image = None # 画像がない場合はNoneに設定
+
+        self.exp_bar_x = 539  # X座標
+        self.exp_bar_y = 247  # Y座標
+        self.exp_bar_width = 257  # 幅
+        self.exp_bar_height = 400 # 高さ
         
         # アクション選択時のメッセージを準備
         self._setup_action_message()
@@ -671,6 +683,12 @@ class BattleScene(BaseScene):
         # HPバーの描画
         self.player_hp_bar.draw(self.screen)
         self.enemy_hp_bar.draw(self.screen)
+
+        if self.exp_bar_image:
+            # 設定した幅と高さに画像をリサイズ
+            scaled_exp_bar = pygame.transform.scale(self.exp_bar_image, (self.exp_bar_width, self.exp_bar_height))
+            # 設定した座標に描画
+            self.screen.blit(scaled_exp_bar, (self.exp_bar_x, self.exp_bar_y))
 
         # レベルの数字を描画
         self.player_level_display.draw(self.screen, self.battle.player_monster.level)
